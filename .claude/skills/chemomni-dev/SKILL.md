@@ -47,13 +47,17 @@ import { StandaloneStructServiceProvider } from 'ketcher-standalone' // use the 
 />
 ```
 
-- Entry point: the default `ketcher-standalone` entry inlines the WASM as base64 (~7 MB gz).
-  Use the `binaryWasm` build (separate `.wasm`, worker via `new URL(..., import.meta.url)`).
-  Confirm the exact import path against the installed package's `package.json` `exports`.
-- Do not use `window.ketcher` (global, last instance wins). Keep the instance from `onInit` in
-  `frontend/src/ketcher/bridge.ts`.
-- Vite: put `@mui/*` and `@emotion/*` in one manual chunk, define `global` as `window`, make
-  sure the `.wasm` is emitted as an asset. EPAM's `example/vite.config.js` is the reference.
+- Entry point: import `StandaloneStructServiceProvider` from `ketcher-standalone/dist/binaryWasm`
+  (separate `.wasm`, worker via `new URL(..., import.meta.url)`). The subpath has no `types`
+  in the package `exports`, so `src/ketcher/ketcher-standalone.d.ts` re-declares it.
+- Ketcher 3.18 does not set `window.ketcher`. The bridge keeps the instance from `onInit` and
+  exposes `window.chemomniKetcher` plus `body[data-ketcher-ready]` for E2E tests only.
+- No `<StrictMode>`: Ketcher's editor does not tolerate double mounting.
+- Vite 8 (verified): `define: { global: 'globalThis' }`, `optimizeDeps.exclude: ['ketcher-standalone']`,
+  `worker.format: 'es'`, and the `events` npm package (ketcher-core imports Node's `events`).
+  The manual `@mui`/`@emotion` chunk was not needed.
+- Build output (M0): app shell 77 KB br; Ketcher JS ~1 MB br (lazy); Indigo WASM 2.5 MB br
+  (immutable cache). The 3D viewer (miew + three, 264 KB br) is a separate lazy chunk.
 
 API surface we rely on (all async unless noted):
 
