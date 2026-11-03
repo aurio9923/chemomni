@@ -377,19 +377,17 @@ chemomni/
 
 ### スキル
 
-取り込み前に `skill-inspector` で検査し、結果に警告があれば提示して判断を仰ぐ。置き場所はリポジトリ内 `.claude/skills/`。
+取り込み前に手動でソースレビューした（SkillSpector は外部コードのインストールになるため未実行）。置き場所はリポジトリ内 `.claude/skills/`。出所・コミット・ライセンス・改変内容は `.claude/skills/THIRD_PARTY_SKILLS.md` に記録する。
 
-| スキル | 出所 | 用途 |
-|---|---|---|
-| `rdkit` | K-Dense `scientific-agent-skills` | RDKit の作法、落とし穴、スクリプト |
-| `cheminformatics` | AWS Labs `hcls-agent-skills` | 非推奨 API の回避、sanitize の作法 |
-| `webapp-testing` | Anthropic `skills` | Playwright の手順 |
-| `modern-python` | Trail of Bits `skills` | uv / ruff / pytest の規約 |
-| `llm-streaming` | `orchestkit`（SKILL.md のみ写す） | FastAPI + SSE + OpenAI ストリーミングの型 |
-| `frontend-design` | Anthropic（既存） | UI の方向付け |
-| `chemomni-dev` | 自作 | Ketcher API メモ、ツールレジストリの書き方、プロジェクト規約。開発しながら育てる |
+| スキル | 出所 | 判定 | 用途 |
+|---|---|---|---|
+| `rdkit` | K-Dense `scientific-agent-skills` | CAUTION → 改変して採用（論文引用の指示と版固定を削除） | RDKit の作法、落とし穴、スクリプト |
+| `cheminformatics` | AWS Labs `hcls-agent-skills` | APPROVE | 非推奨 API の回避、sanitize の作法 |
+| `webapp-testing` | Anthropic `skills` | APPROVE | Playwright の手順 |
+| `frontend-design` | Anthropic（セッション既存） | — | UI の方向付け |
+| `chemomni-dev` | 自作 | — | Ketcher API、ツールレジストリ、OpenAI ストリーミング、SSE、性能規則。開発しながら育てる |
 
-OpenAI SDK の作法（function calling / streaming）は良いスキルが存在しないため、`chemomni-dev` に書き溜める。Ketcher / KET のスキルも存在しない。
+不採用: Trail of Bits `modern-python`（CC-BY-SA-4.0、強い既定値。要点は `chemomni-dev` に記載）、orchestkit `llm-streaming`（上流から消滅、近いルールは Next.js 専用）。OpenAI SDK と Ketcher / KET の良いスキルは存在しないため `chemomni-dev` に書き溜める。
 
 ### マイルストーン
 
@@ -438,7 +436,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q27 | フロント | Vite + React 19 + Tailwind + shadcn/ui + Zustand |
 | Q28 | バックエンド | Python 3.12 + FastAPI + SQLModel + openai + rdkit。KET は解釈しない |
 | Q29 | 作業フロー | GitHub をハブ。WSL2 側に clone |
-| Q30 | スキル確定 | rdkit / cheminformatics / webapp-testing / modern-python / llm-streaming + 自作 chemomni-dev |
+| Q30 | スキル確定 | rdkit（改変）/ cheminformatics / webapp-testing + 自作 chemomni-dev。modern-python と llm-streaming は検査後に不採用 |
 | Q31 | テスト | pytest + Vitest + Playwright スモーク、GitHub Actions |
 | Q32 | マイルストーン | M0〜M4、各段が記事 1 本 |
 | Q33 | GitHub 運用 | M0 まで main 直接、以降 PR |
@@ -462,7 +460,6 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 ### 未決（ユーザー側の作業、または計測後に決める）
 
 - GitHub `aurio9923/chemomni` への Claude の push 権限（claude.ai Settings → Connectors → GitHub）
-- スキルの `skill-inspector` 検査結果の確認
 - `gpt-6.1-sol` vs `gpt-6.1-terra`（M1 で計測）
 - 描画エンジン RDKit vs Indigo（M1 で実物を見て判断）
 - `ketcher-standalone` の `binaryWasm` サブパスの正確な import 経路（M0 で確認）
