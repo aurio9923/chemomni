@@ -174,3 +174,39 @@ def test_before_and_after_share_the_layout() -> None:
     assert abs(before.GetConformer().GetAtomPosition(0).x - after.GetConformer().GetAtomPosition(0).x) < 0.01
     svg = depict_molblock(r.molblock, 280, 200, tuple(r.changed_atoms))
     assert svg and "<svg" in svg
+
+
+def _ketcher_scaled(smiles: str) -> str:
+    """A drawing like Ketcher's: bond length ~1.0 instead of RDKit's 1.5."""
+    from chemomni.chem.edit import _mean_bond_length, _scale
+
+    m = Chem.MolFromSmiles(smiles)
+    rdDepictor.Compute2DCoords(m)  # 1.5 (RDKit) or 1.0 (CoordGen), depending on global state
+    return Chem.MolToV3KMolBlock(_scale(m, 1.0 / _mean_bond_length(m)))
+
+
+def _bond_lengths(molblock: str) -> list[float]:
+    m = Chem.MolFromMolBlock(molblock)
+    c = m.GetConformer()
+    return [
+        (c.GetAtomPosition(b.GetBeginAtomIdx()) - c.GetAtomPosition(b.GetEndAtomIdx())).Length() for b in m.GetBonds()
+    ]
+
+
+def test_new_bonds_match_the_users_bond_length() -> None:
+    # methyl benzoate -> 3-phenyl-5-methyl-1,2,4-oxadiazole (the case reported from real use)
+    r = edit("COC(=O)c1ccccc1", "Cc1nc(-c2ccccc2)no1", _ketcher_scaled("COC(=O)c1ccccc1"))
+    lengths = _bond_lengths(r.molblock)
+    assert min(lengths) > 0.9 and max(lengths) < 1.1, lengths
+
+
+def test_alignment_does_not_depend_on_global_coordgen_setting() -> None:
+    template = _ketcher_scaled("COC(=O)c1ccccc1")
+    results = []
+    for prefer in (True, False):
+        rdDepictor.SetPreferCoordGen(prefer)
+        r = edit("COC(=O)c1ccccc1", "Cc1nc(-c2ccccc2)no1", template)
+        results.append(_bond_lengths(r.molblock))
+    rdDepictor.SetPreferCoordGen(True)
+    for lengths in results:
+        assert min(lengths) > 0.9 and max(lengths) < 1.1, lengths

@@ -178,6 +178,9 @@ async for chunk in stream:
 
 - Use the vendored `rdkit` and `cheminformatics` skills for API details.
 - Fingerprints: `rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)`.
+- Ketcher molfiles use bond length ~1.0, RDKit's depictor 1.5, CoordGen 1.0. `chem/edit.py` scales the
+  template to 1.5, matches with RDKit's depictor (CoordGen forced off — depict.py turns it on
+  globally), then scales back. Mixing scales gives long new bonds and bent rings (seen in real use).
 - Coordinates aligned to a parent: `rdFMCS.FindMCS([parent, child], ringMatchesRingOnly=True,
   completeRingsOnly=True, timeout=2)` then `AllChem.GenerateDepictionMatching2DStructure`;
   fall back to `rdDepictor.Compute2DCoords`.
