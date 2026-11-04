@@ -8,6 +8,7 @@ import { useWorkspace } from './workspace'
 
 interface ChatState {
   config: AppConfig | null
+  loadedConversationId: string | null
   turns: Turn[]
   streaming: boolean
   load: (conversationId: string) => Promise<void>
@@ -72,11 +73,19 @@ export const useChat = create<ChatState>((set, get) => {
 
   return {
     config: null,
+    loadedConversationId: null,
     turns: [],
     streaming: false,
 
     load: async (conversationId) => {
+      if (get().loadedConversationId === conversationId) return
+      set({ loadedConversationId: conversationId })
       const [config, { messages }] = await Promise.all([api.config(), api.messages(conversationId)])
+      // a newer conversation was selected, or the user already started chatting: keep local state
+      if (get().loadedConversationId !== conversationId || get().turns.length > 0) {
+        set({ config })
+        return
+      }
       set({
         config,
         turns: messages.map((m) =>
@@ -167,8 +176,8 @@ export const useChat = create<ChatState>((set, get) => {
     newChat: async () => {
       get().stop()
       const conv = await api.newConversation()
+      set({ turns: [], loadedConversationId: conv.id })
       useWorkspace.getState().setConversation(conv.id)
-      set({ turns: [] })
     },
   }
 })

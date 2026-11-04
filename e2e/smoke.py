@@ -111,13 +111,20 @@ def main() -> None:
         expect(tabs).to_have_count(n + 1)
         expect(page.get_by_test_id("property-bar")).to_contain_text("C2H6O", timeout=5_000)
 
-        # M1: chat with the fake provider computes properties of the active tab (ethanol)
+        # M1: chat with the fake provider computes properties of the active tab (ethanol).
+        # Slow down history loading so a late response would race with the message being sent.
+        def slow_history(route):  # type: ignore[no-untyped-def]
+            time.sleep(0.8)
+            route.continue_()
+
+        page.route("**/api/conversations/*/messages", slow_history)
         page.get_by_role("button", name="New chat").click()
         expect(page.get_by_test_id("user-message")).to_have_count(0)
         box = page.get_by_role("textbox", name="Message")
         box.fill("Compute the properties")
         box.press("Enter")
         expect(page.get_by_test_id("user-message")).to_have_count(1)
+        page.unroute("**/api/conversations/*/messages")
         table = page.get_by_test_id("artifact-table")
         expect(table).to_contain_text("C2H6O", timeout=10_000)
         expect(page.get_by_test_id("assistant-message")).to_contain_text("MW 46.07 g/mol")

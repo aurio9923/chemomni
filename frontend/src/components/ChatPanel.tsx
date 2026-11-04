@@ -147,10 +147,8 @@ export function ChatPanel() {
   const bottom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (conversationId && turns.length === 0) void load(conversationId)
-    // load once per conversation; newChat() clears turns itself
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId])
+    if (conversationId) void load(conversationId) // no-op for a conversation already loaded or just created
+  }, [conversationId, load])
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: 'end' })
