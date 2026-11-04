@@ -148,11 +148,15 @@ async def test_http_error_becomes_llm_error() -> None:
 
 
 def test_provider_selection() -> None:
-    official = make_provider(Settings(OPENAI_API_KEY="sk", CHEMOMNI_PROVIDER="openai"))
+    official = make_provider(Settings(_env_file=None, OPENAI_API_KEY="sk", CHEMOMNI_PROVIDER="openai"))
     local = make_provider(
-        Settings(OPENAI_API_KEY="", OPENAI_BASE_URL="http://localhost:11434/v1", CHEMOMNI_PROVIDER="openai")
+        Settings(
+            _env_file=None, OPENAI_API_KEY="", OPENAI_BASE_URL="http://localhost:11434/v1", CHEMOMNI_PROVIDER="openai"
+        )
     )
-    forced = make_provider(Settings(OPENAI_API_KEY="sk", CHEMOMNI_PROVIDER="openai", CHEMOMNI_OPENAI_API="chat"))
+    forced = make_provider(
+        Settings(_env_file=None, OPENAI_API_KEY="sk", CHEMOMNI_PROVIDER="openai", CHEMOMNI_OPENAI_API="chat")
+    )
     assert isinstance(official, OpenAIResponsesProvider)
     assert isinstance(local, OpenAIChatProvider)
     assert isinstance(forced, OpenAIChatProvider)

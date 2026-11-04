@@ -6,8 +6,21 @@ import { readSSE } from '../lib/sse'
 import type { AppConfig, Artifact, Part, StoredMessage, Turn } from '../lib/types'
 import { useWorkspace } from './workspace'
 
+const MODEL_KEY = 'chemomni.model'
+
+function readStoredModel(): string | null {
+  try {
+    return localStorage.getItem(MODEL_KEY)
+  } catch {
+    return null
+  }
+}
+
 interface ChatState {
   config: AppConfig | null
+  /** Model chosen in the picker; null means the server default. */
+  model: string | null
+  setModel: (model: string) => void
   loadedConversationId: string | null
   turns: Turn[]
   streaming: boolean
@@ -73,6 +86,7 @@ export const useChat = create<ChatState>((set, get) => {
 
   return {
     config: null,
+    model: null,
     loadedConversationId: null,
     turns: [],
     streaming: false,
@@ -81,6 +95,10 @@ export const useChat = create<ChatState>((set, get) => {
       if (get().loadedConversationId === conversationId) return
       set({ loadedConversationId: conversationId })
       const [config, { messages }] = await Promise.all([api.config(), api.messages(conversationId)])
+      if (get().model === null) {
+        const stored = readStoredModel()
+        set({ model: stored && config.models.includes(stored) ? stored : config.model })
+      }
       // a newer conversation was selected, or the user already started chatting: keep local state
       if (get().loadedConversationId !== conversationId || get().turns.length > 0) {
         set({ config })
@@ -95,7 +113,7 @@ export const useChat = create<ChatState>((set, get) => {
                 role: 'user',
                 parts: [{ kind: 'text', text: m.blocks.map((b) => b.text ?? '').join('') }],
               }
-            : { id: m.id, role: 'assistant', parts: partsFromStored(m), stopReason: m.stop_reason },
+            : { id: m.id, role: 'assistant', parts: partsFromStored(m), stopReason: m.stop_reason, model: m.model },
         ),
       })
     },
@@ -117,7 +135,7 @@ export const useChat = create<ChatState>((set, get) => {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-          body: JSON.stringify({ conversation_id: conversationId, content: text, snapshot }),
+          body: JSON.stringify({ conversation_id: conversationId, content: text, snapshot, model: get().model }),
           signal: controller.signal,
         })
         if (!res.ok) throw new Error(`Chat request failed (${res.status})`)
@@ -125,7 +143,7 @@ export const useChat = create<ChatState>((set, get) => {
           const data = JSON.parse(msg.data)
           switch (msg.event) {
             case 'message.start':
-              updateLast((t) => ({ ...t, id: data.message_id }))
+              updateLast((t) => ({ ...t, id: data.message_id, model: data.model }))
               break
             case 'text.delta':
               appendText(data.delta)
@@ -172,6 +190,15 @@ export const useChat = create<ChatState>((set, get) => {
     },
 
     stop: () => controller?.abort(),
+
+    setModel: (model) => {
+      set({ model })
+      try {
+        localStorage.setItem(MODEL_KEY, model)
+      } catch {
+        /* private mode etc.: the choice just won't be remembered */
+      }
+    },
 
     newChat: async () => {
       get().stop()

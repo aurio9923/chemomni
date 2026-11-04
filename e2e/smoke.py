@@ -128,6 +128,8 @@ def main() -> None:
         table = page.get_by_test_id("artifact-table")
         expect(table).to_contain_text("C2H6O", timeout=10_000)
         expect(page.get_by_test_id("assistant-message")).to_contain_text("MW 46.07 g/mol")
+        expect(page.get_by_role("combobox", name="Model")).to_be_enabled()
+        expect(page.get_by_test_id("answered-by")).to_have_text("fake")
         # open the structure from the chat card in a new tab
         tab_count = tabs.count()
         table.get_by_role("button", name="Open C2H6O in a new tab").click()

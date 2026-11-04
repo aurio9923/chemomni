@@ -25,12 +25,20 @@ class Settings(BaseSettings):
 
     provider: Literal["openai", "fake"] = Field(default="openai", alias="CHEMOMNI_PROVIDER")
     model: str = Field(default="gpt-6.1-sol", alias="CHEMOMNI_MODEL")
+    # Models offered in the UI's model picker (comma-separated). CHEMOMNI_MODEL is the initial one.
+    models: str = Field(default="gpt-6.1-sol,gpt-6.1-terra,gpt-6-astra,gpt-6-luna", alias="CHEMOMNI_MODELS")
     # Which OpenAI API to call. "auto": Responses API for api.openai.com (required for tools on
     # reasoning models such as gpt-6.1-sol), Chat Completions when OPENAI_BASE_URL points elsewhere
     # (Ollama, vLLM, LM Studio).
     openai_api: Literal["auto", "responses", "chat"] = Field(default="auto", alias="CHEMOMNI_OPENAI_API")
     # Leave empty to omit the parameter (local OpenAI-compatible servers).
     reasoning_effort: str | None = Field(default="low", alias="CHEMOMNI_REASONING_EFFORT")
+
+    @property
+    def model_list(self) -> list[str]:
+        """Selectable models; the default model is always included."""
+        names = [m.strip() for m in self.models.split(",") if m.strip()]
+        return list(dict.fromkeys([self.model, *names]))
 
     @property
     def use_responses_api(self) -> bool:

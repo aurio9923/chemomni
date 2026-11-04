@@ -13,6 +13,8 @@ from chemomni.main import create_app
 @pytest.fixture
 async def client(tmp_path: Path) -> AsyncIterator[httpx.AsyncClient]:
     settings = Settings(
+        _env_file=None,  # never read the developer's .env in tests
+        CHEMOMNI_MODEL="gpt-6.1-sol",
         CHEMOMNI_DB=tmp_path / "test.sqlite",
         CHEMOMNI_PROVIDER="fake",
         CHEMOMNI_STATIC_DIR=tmp_path / "no-frontend",

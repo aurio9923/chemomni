@@ -74,6 +74,11 @@ function TurnView({ turn }: { turn: Turn }) {
       {turn.stopReason === 'max_tools' && (
         <div className="text-xs text-muted">Stopped after the tool-call limit for one turn.</div>
       )}
+      {turn.model && !turn.streaming && (
+        <div className="text-[11px] text-muted/80" data-testid="answered-by">
+          {turn.model}
+        </div>
+      )}
     </div>
   )
 }
@@ -143,7 +148,7 @@ function Composer() {
 
 export function ChatPanel() {
   const conversationId = useWorkspace((s) => s.conversationId)
-  const { turns, load, config, newChat, streaming } = useChat()
+  const { turns, load, config, newChat, streaming, model, setModel } = useChat()
   const bottom = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -158,7 +163,23 @@ export function ChatPanel() {
     <section className="flex h-full min-h-0 flex-col bg-white" aria-label="Chat">
       <header className="flex h-9 shrink-0 items-center gap-2 border-b border-line px-3 text-[13px]">
         <span className="font-medium text-ink">Assistant</span>
-        {config && <span className="text-xs text-muted">{config.model}</span>}
+        {config && (
+          <select
+            aria-label="Model"
+            title="Model used for the next message"
+            value={model ?? config.model}
+            disabled={streaming}
+            onChange={(e) => setModel(e.target.value)}
+            className="rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-muted hover:border-line hover:text-ink focus:border-accent focus:outline-none disabled:opacity-50"
+          >
+            {config.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+                {m === config.model ? ' (default)' : ''}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="button"
           disabled={streaming}

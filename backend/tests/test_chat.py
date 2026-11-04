@@ -154,3 +154,20 @@ def test_context_trims_old_turns() -> None:
     assert [m["role"] for m in out] == ["system", "system", "user"]
     out = build_messages(history, Snapshot(), budget=10_000)
     assert [m["role"] for m in out] == ["system", "user", "assistant", "system", "user"]
+
+
+async def test_model_selection(client: httpx.AsyncClient, conv: str) -> None:
+    cfg = (await client.get("/api/config")).json()
+    assert cfg["models"][0] == cfg["model"]
+    assert "gpt-6.1-terra" in cfg["models"]
+
+    r = await client.post("/api/chat", json={"conversation_id": conv, "content": "hi", "model": "not-a-model"})
+    assert r.status_code == 400
+
+    body = {"conversation_id": conv, "content": "props", "snapshot": SNAPSHOT, "model": "gpt-6.1-terra"}
+    async with client.stream("POST", "/api/chat", json=body) as r:
+        assert r.status_code == 200
+        text = "".join([line async for line in r.aiter_lines()])
+    assert "message.done" in text
+    app = client._transport.app  # type: ignore[attr-defined]
+    assert "gpt-6.1-terra" in app.state.providers

@@ -99,6 +99,7 @@ export interface Turn {
   streaming?: boolean
   error?: string
   stopReason?: string | null
+  model?: string | null
 }
 
 export interface StoredBlock {
@@ -117,10 +118,12 @@ export interface StoredMessage {
   blocks: StoredBlock[]
   artifacts: Artifact[]
   stop_reason: string | null
+  model: string | null
 }
 
 export interface AppConfig {
   provider: string
   model: string
+  models: string[]
   api_key_set: boolean
 }

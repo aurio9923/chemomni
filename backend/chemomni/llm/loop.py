@@ -45,7 +45,12 @@ async def run_turn(
 
     yield (
         "message.start",
-        {"message_id": assistant.id, "user_message_id": user.id, "conversation_id": conversation.id},
+        {
+            "message_id": assistant.id,
+            "user_message_id": user.id,
+            "conversation_id": conversation.id,
+            "model": provider.model,
+        },
     )
 
     history = list(

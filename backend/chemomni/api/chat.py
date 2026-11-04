@@ -25,27 +25,41 @@ router = APIRouter(prefix="/api", tags=["chat"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def make_provider(settings: Settings) -> LLMProvider:
+def make_provider(settings: Settings, model: str | None = None) -> LLMProvider:
     if settings.provider == "fake":
         return FakeProvider()
     cls = OpenAIResponsesProvider if settings.use_responses_api else OpenAIChatProvider
     return cls(
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
-        model=settings.model,
+        model=model or settings.model,
         reasoning_effort=settings.reasoning_effort,
     )
+
+
+def provider_for(request: Request, model: str | None) -> LLMProvider:
+    """The default provider lives in app.state.provider (tests replace it); others are cached per model."""
+    settings: Settings = request.app.state.settings
+    if not model or model == settings.model:
+        return request.app.state.provider
+    if model not in settings.model_list:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"model '{model}' is not in CHEMOMNI_MODELS")
+    cache: dict[str, LLMProvider] = request.app.state.providers
+    if model not in cache:
+        cache[model] = make_provider(settings, model)
+    return cache[model]
 
 
 class ChatRequest(BaseModel):
     conversation_id: str
     content: str = Field(..., min_length=1, max_length=20_000)
     snapshot: Snapshot = Field(default_factory=Snapshot)
+    model: str | None = Field(default=None, description="One of CHEMOMNI_MODELS; default CHEMOMNI_MODEL.")
 
 
 @router.post("/chat")
 async def chat(body: ChatRequest, request: Request) -> EventSourceResponse:
-    provider: LLMProvider = request.app.state.provider
+    provider = provider_for(request, body.model)
     settings: Settings = request.app.state.settings
 
     async with db.new_session() as check:
@@ -104,6 +118,7 @@ async def list_messages(conversation_id: str, session: SessionDep) -> dict[str, 
                 "blocks": m.content,
                 "artifacts": by_message.get(m.id, []),
                 "stop_reason": m.stop_reason,
+                "model": m.model,
                 "created_at": m.created_at.isoformat(),
             }
             for m in rows

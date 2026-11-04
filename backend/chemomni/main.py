@@ -25,6 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="ChemOmni", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.provider = make_provider(settings)
+    app.state.providers = {}
     app.include_router(tabs.router)
     app.include_router(chem.router)
     app.include_router(chat.router)
@@ -34,10 +35,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/api/config")
-    async def config() -> dict[str, str | bool | None]:
+    async def config() -> dict[str, str | bool | list[str] | None]:
         return {
             "provider": settings.provider,
             "model": settings.model,
+            "models": settings.model_list,
             "api_key_set": bool(settings.openai_api_key) or bool(settings.openai_base_url),
         }
 
