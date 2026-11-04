@@ -35,7 +35,9 @@ let controller: AbortController | null = null
 async function buildSnapshot() {
   const ws = useWorkspace.getState()
   const active = ws.tabs.find((t) => t.id === ws.activeTabId)
-  const [smiles, molfile] = await Promise.all([ketcher.getComponentSmiles(), ketcher.getMolfileV3000()])
+  const [read, molfile] = await Promise.all([ketcher.getComponentSmiles(), ketcher.getMolfileV3000()])
+  // If Ketcher could not be read (see bridge.ts), fall back to the last autosaved SMILES of the tab.
+  const smiles = read.length > 0 ? read : (active?.smiles_cache ?? [])
   return {
     active_tab: active ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile } : null,
     tabs: ws.tabs.map((t) => ({

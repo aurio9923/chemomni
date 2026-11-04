@@ -56,6 +56,8 @@ def main() -> None:
         page = ctx.new_page()
         errors: list[str] = []
         page.on("pageerror", lambda e: errors.append(str(e)))
+        console: list[str] = []
+        page.on("console", lambda m: console.append(f"{m.type}: {m.text}"))
 
         t0 = time.perf_counter()
         page.goto(BASE)
@@ -126,7 +128,12 @@ def main() -> None:
         expect(page.get_by_test_id("user-message")).to_have_count(1)
         page.unroute("**/api/conversations/*/messages")
         table = page.get_by_test_id("artifact-table")
-        expect(table).to_contain_text("C2H6O", timeout=10_000)
+        try:
+            expect(table).to_contain_text("C2H6O", timeout=10_000)
+        except AssertionError:
+            print("assistant said:", page.get_by_test_id("assistant-message").last.inner_text())
+            print("console:", *console[-20:], sep="\n  ")
+            raise
         expect(page.get_by_test_id("assistant-message")).to_contain_text("MW 46.07 g/mol")
         expect(page.get_by_role("combobox", name="Model")).to_be_enabled()
         expect(page.get_by_test_id("answered-by")).to_have_text("fake")

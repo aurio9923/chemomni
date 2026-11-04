@@ -98,7 +98,9 @@ function read<T>(op: (k: Ketcher) => Promise<T>): Promise<T> {
       try {
         return await withTimeout(op(k), READ_TIMEOUT_MS)
       } catch (e) {
-        if (!(e instanceof ReadTimeout) || attempt >= READ_ATTEMPTS) throw e
+        if (!(e instanceof ReadTimeout)) throw e
+        console.warn(`[bridge] Ketcher read timed out (attempt ${attempt}/${READ_ATTEMPTS})`)
+        if (attempt >= READ_ATTEMPTS) throw e
       }
     }
   })
