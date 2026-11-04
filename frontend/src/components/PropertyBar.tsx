@@ -3,13 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import * as ketcher from '../ketcher/bridge'
 import { api } from '../lib/api'
 import type { LightRow } from '../lib/types'
-import { useWorkspace } from '../store/workspace'
 
 const DEBOUNCE_MS = 300
 
 export function PropertyBar() {
-  const activeTabId = useWorkspace((s) => s.activeTabId)
-  const switching = useWorkspace((s) => s.switching)
   const [rows, setRows] = useState<LightRow[]>([])
   const [index, setIndex] = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -36,13 +33,14 @@ export function PropertyBar() {
         }
       }, DEBOUNCE_MS)
     }
-    const off = ketcher.onChange(refresh)
-    if (!switching) refresh()
+    const offChange = ketcher.onChange(refresh)
+    const offLoad = ketcher.onLoad(refresh)
     return () => {
-      off()
+      offChange()
+      offLoad()
       if (timer.current) clearTimeout(timer.current)
     }
-  }, [activeTabId, switching])
+  }, [])
 
   const row = rows[index]
   return (

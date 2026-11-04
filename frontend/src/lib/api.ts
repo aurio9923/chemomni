@@ -1,4 +1,4 @@
-import type { ContentFormat, LightRow, Tab, Workspace } from './types'
+import type { AppConfig, ContentFormat, LightRow, StoredMessage, Tab, Workspace } from './types'
 
 export class ApiError extends Error {
   readonly status: number
@@ -42,6 +42,10 @@ export const api = {
   restoreTab: (id: string) => request<Tab>('POST', `/api/tabs/${id}/restore`),
   duplicateTab: (id: string) => request<Tab>('POST', `/api/tabs/${id}/duplicate`),
   closedTabs: () => request<Tab[]>('GET', '/api/tabs/closed'),
+  config: () => request<AppConfig>('GET', '/api/config'),
+  newConversation: () => request<{ id: string; title: string }>('POST', '/api/conversations'),
+  messages: (conversationId: string) =>
+    request<{ messages: StoredMessage[] }>('GET', `/api/conversations/${conversationId}/messages`),
   lightProperties: (smiles: string[], signal?: AbortSignal) =>
     request<{ rows: LightRow[] }>('POST', '/api/chem/properties', { smiles, light: true }, signal),
 }

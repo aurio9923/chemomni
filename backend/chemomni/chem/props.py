@@ -67,7 +67,7 @@ def _alerts(catalog: FilterCatalog.FilterCatalog, mol: Chem.Mol) -> list[str]:
 
 
 def _r(value: float, digits: int = 2) -> float:
-    return round(float(value), digits)
+    return round(float(value), digits) + 0.0  # + 0.0 turns -0.0 into 0.0
 
 
 @lru_cache(maxsize=4096)

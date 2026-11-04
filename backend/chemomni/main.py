@@ -7,7 +7,8 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from chemomni import db
-from chemomni.api import chem, tabs
+from chemomni.api import chat, chem, tabs
+from chemomni.api.chat import make_provider
 from chemomni.config import Settings, get_settings
 from chemomni.static import mount_frontend
 
@@ -22,16 +23,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await db.close_db()
 
     app = FastAPI(title="ChemOmni", version="0.1.0", lifespan=lifespan)
+    app.state.settings = settings
+    app.state.provider = make_provider(settings)
     app.include_router(tabs.router)
     app.include_router(chem.router)
+    app.include_router(chat.router)
 
     @app.get("/api/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.get("/api/config")
-    async def config() -> dict[str, str | None]:
-        return {"provider": settings.provider, "model": settings.model}
+    async def config() -> dict[str, str | bool | None]:
+        return {
+            "provider": settings.provider,
+            "model": settings.model,
+            "api_key_set": bool(settings.openai_api_key) or bool(settings.openai_base_url),
+        }
 
     static_dir = settings.static_dir or Path(__file__).resolve().parents[2] / "frontend" / "dist"
     if static_dir.is_dir():

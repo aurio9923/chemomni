@@ -72,6 +72,6 @@ jobs:
           nohup uv run uvicorn chemomni.main:app --port 8000 > /tmp/server.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/api/health && break; sleep 1; done
       - name: Smoke test
-        run: uv run --no-project --with playwright python e2e/smoke_m0.py http://127.0.0.1:8000 /tmp/m0.png
+        run: uv run --no-project --with playwright python e2e/smoke.py http://127.0.0.1:8000 /tmp/m0.png
       - if: failure()
         run: cat /tmp/server.log

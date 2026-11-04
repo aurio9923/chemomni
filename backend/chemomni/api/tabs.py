@@ -21,16 +21,12 @@ async def _workspace(session: AsyncSession) -> Workspace:
 
 
 async def _next_position(session: AsyncSession, workspace_id: str) -> int:
-    current = (
-        await session.exec(select(func.max(Tab.position)).where(Tab.workspace_id == workspace_id))
-    ).one()
+    current = (await session.exec(select(func.max(Tab.position)).where(Tab.workspace_id == workspace_id))).one()
     return (current or 0) + 1
 
 
 async def _untitled_name(session: AsyncSession, workspace_id: str) -> str:
-    count = (
-        await session.exec(select(func.count()).select_from(Tab).where(Tab.workspace_id == workspace_id))
-    ).one()
+    count = (await session.exec(select(func.count()).select_from(Tab).where(Tab.workspace_id == workspace_id))).one()
     return f"Untitled {count + 1}"
 
 

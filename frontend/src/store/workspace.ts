@@ -23,6 +23,8 @@ interface WorkspaceState {
   restoreLastClosed: () => Promise<void>
   duplicateTab: (id: string) => Promise<void>
   renameTab: (id: string, name: string) => Promise<void>
+  openStructures: (name: string, items: { molfile: string | null; smiles: string }[]) => Promise<void>
+  setConversation: (id: string) => void
   markDirty: () => void
   flush: () => Promise<void>
 }
@@ -142,6 +144,22 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
       const current = get().tabs.find((t) => t.id === id) ?? tab
       patchTab(await api.updateTab(id, { revision: current.revision, name }))
     },
+
+    openStructures: async (name, items) => {
+      // M1: one structure per call from chat cards. M3 adds server-side grid layout for many.
+      const [first] = items
+      if (!first) return
+      const tab = await api.createTab({
+        name,
+        content_format: 'mol',
+        content: first.molfile ?? first.smiles,
+        smiles: [first.smiles],
+      })
+      set((s) => ({ tabs: [...s.tabs, tab] }))
+      await get().activate(tab.id)
+    },
+
+    setConversation: (id) => set({ conversationId: id }),
 
     markDirty: () => {
       if (saveTimer) clearTimeout(saveTimer)

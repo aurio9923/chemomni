@@ -21,3 +21,54 @@ body {
   background: var(--color-panel);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Markdown in chat messages */
+.md > * + * {
+  margin-top: 0.6em;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.25em;
+}
+.md li + li {
+  margin-top: 0.2em;
+}
+.md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--color-panel);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+.md pre {
+  background: var(--color-panel);
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.md th,
+.md td {
+  border: 1px solid var(--color-line);
+  padding: 0.2em 0.5em;
+}
+.md h1,
+.md h2,
+.md h3 {
+  font-weight: 600;
+}
+.md a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}

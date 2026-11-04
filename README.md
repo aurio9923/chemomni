@@ -34,4 +34,4 @@ pnpm dev
 
 Production-like run: `pnpm build` in `frontend/`, then start the backend; it serves `frontend/dist` with pre-compressed assets.
 
-Tests: `uv run pytest` (backend), `pnpm lint && pnpm build` (frontend), `e2e/smoke_m0.py` against a running server.
+Tests: `uv run pytest` (backend), `pnpm lint && pnpm build` (frontend), `e2e/smoke.py` against a running server.

@@ -50,6 +50,12 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 
+def new_session() -> AsyncSession:
+    """A session owned by the caller (used by the SSE generator, which outlives the request scope)."""
+    assert _sessionmaker is not None, "init_db() was not called"
+    return _sessionmaker()
+
+
 async def ensure_default_workspace(session: AsyncSession) -> tuple[Workspace, Conversation]:
     """Single-workspace MVP: create the default workspace and conversation on first use."""
     ws = (await session.exec(select(Workspace).where(Workspace.user_id == LOCAL_USER))).first()
@@ -59,9 +65,7 @@ async def ensure_default_workspace(session: AsyncSession) -> tuple[Workspace, Co
         await session.flush()
     conv = (
         await session.exec(
-            select(Conversation)
-            .where(Conversation.workspace_id == ws.id)
-            .order_by(Conversation.updated_at.desc())  # type: ignore[attr-defined]
+            select(Conversation).where(Conversation.workspace_id == ws.id).order_by(Conversation.updated_at.desc())  # type: ignore[attr-defined]
         )
     ).first()
     if conv is None:

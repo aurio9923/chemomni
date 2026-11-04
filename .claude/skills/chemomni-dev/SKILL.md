@@ -71,6 +71,11 @@ API surface we rely on (all async unless noted):
 | Selection | `ketcher.editor.subscribe('selectionChange', h)`, `ketcher.editor.selection()` → `{ atoms?: number[], bonds?: number[], ... }` |
 | History | `ketcher.editor.clearHistory()`; history is capped at 32 entries |
 
+**Known Ketcher 3.18 bug (verified):** a read (`getSmiles`, `getKet`, ...) issued while a
+document is being loaded with `setMolecule` can stay pending forever. `bridge.ts` therefore
+serializes every operation through one queue and retries reads with a 1.5 s timeout. Never call
+the Ketcher instance directly from components or tests; tests use `window.chemomniBridge`.
+
 Tab switching with one shared instance:
 
 ```ts

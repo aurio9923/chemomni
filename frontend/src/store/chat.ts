@@ -1,0 +1,174 @@
+import { create } from 'zustand'
+
+import * as ketcher from '../ketcher/bridge'
+import { api } from '../lib/api'
+import { readSSE } from '../lib/sse'
+import type { AppConfig, Artifact, Part, StoredMessage, Turn } from '../lib/types'
+import { useWorkspace } from './workspace'
+
+interface ChatState {
+  config: AppConfig | null
+  turns: Turn[]
+  streaming: boolean
+  load: (conversationId: string) => Promise<void>
+  send: (text: string) => Promise<void>
+  stop: () => void
+  newChat: () => Promise<void>
+}
+
+let controller: AbortController | null = null
+
+async function buildSnapshot() {
+  const ws = useWorkspace.getState()
+  const active = ws.tabs.find((t) => t.id === ws.activeTabId)
+  const [smiles, molfile] = await Promise.all([ketcher.getComponentSmiles(), ketcher.getMolfileV3000()])
+  return {
+    active_tab: active ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile } : null,
+    tabs: ws.tabs.map((t) => ({
+      id: t.id,
+      name: t.name,
+      smiles: t.id === active?.id ? smiles : t.smiles_cache,
+    })),
+  }
+}
+
+/** Rebuild UI parts from a stored assistant message (blocks + artifacts linked by call_id). */
+export function partsFromStored(msg: StoredMessage): Part[] {
+  const parts: Part[] = []
+  const results = new Map(
+    msg.blocks.filter((b) => b.type === 'tool_result').map((b) => [b.tool_call_id!, b.content ?? '']),
+  )
+  for (const b of msg.blocks) {
+    if (b.type === 'text' && b.text) {
+      parts.push({ kind: 'text', text: b.text })
+    } else if (b.type === 'tool_use' && b.id) {
+      let ok = false
+      try {
+        ok = Boolean(JSON.parse(results.get(b.id) ?? '{}').ok)
+      } catch {
+        /* keep false */
+      }
+      parts.push({ kind: 'tool', callId: b.id, name: b.name ?? '?', status: ok ? 'ok' : 'error' })
+      for (const a of msg.artifacts.filter((x) => x.payload.call_id === b.id)) {
+        parts.push({ kind: 'artifact', artifact: a })
+      }
+    }
+  }
+  return parts
+}
+
+export const useChat = create<ChatState>((set, get) => {
+  const updateLast = (fn: (turn: Turn) => Turn) =>
+    set((s) => ({ turns: [...s.turns.slice(0, -1), fn(s.turns[s.turns.length - 1])] }))
+
+  const appendText = (delta: string) =>
+    updateLast((t) => {
+      const parts = [...t.parts]
+      const last = parts[parts.length - 1]
+      if (last?.kind === 'text') parts[parts.length - 1] = { ...last, text: last.text + delta }
+      else parts.push({ kind: 'text', text: delta })
+      return { ...t, parts }
+    })
+
+  return {
+    config: null,
+    turns: [],
+    streaming: false,
+
+    load: async (conversationId) => {
+      const [config, { messages }] = await Promise.all([api.config(), api.messages(conversationId)])
+      set({
+        config,
+        turns: messages.map((m) =>
+          m.role === 'user'
+            ? {
+                id: m.id,
+                role: 'user',
+                parts: [{ kind: 'text', text: m.blocks.map((b) => b.text ?? '').join('') }],
+              }
+            : { id: m.id, role: 'assistant', parts: partsFromStored(m), stopReason: m.stop_reason },
+        ),
+      })
+    },
+
+    send: async (text) => {
+      const conversationId = useWorkspace.getState().conversationId
+      if (!conversationId || get().streaming || !text.trim()) return
+      set((s) => ({
+        streaming: true,
+        turns: [
+          ...s.turns,
+          { id: `local-user-${Date.now()}`, role: 'user', parts: [{ kind: 'text', text }] },
+          { id: `local-assistant-${Date.now()}`, role: 'assistant', parts: [], streaming: true },
+        ],
+      }))
+      controller = new AbortController()
+      try {
+        const snapshot = await buildSnapshot()
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+          body: JSON.stringify({ conversation_id: conversationId, content: text, snapshot }),
+          signal: controller.signal,
+        })
+        if (!res.ok) throw new Error(`Chat request failed (${res.status})`)
+        for await (const msg of readSSE(res)) {
+          const data = JSON.parse(msg.data)
+          switch (msg.event) {
+            case 'message.start':
+              updateLast((t) => ({ ...t, id: data.message_id }))
+              break
+            case 'text.delta':
+              appendText(data.delta)
+              break
+            case 'tool.start':
+              updateLast((t) => ({
+                ...t,
+                parts: [...t.parts, { kind: 'tool', callId: data.call_id, name: data.name, status: 'running' }],
+              }))
+              break
+            case 'tool.result':
+              updateLast((t) => ({
+                ...t,
+                parts: t.parts.map((p) =>
+                  p.kind === 'tool' && p.callId === data.call_id
+                    ? { ...p, status: data.ok ? 'ok' : 'error', summary: data.summary, durationMs: data.duration_ms }
+                    : p,
+                ),
+              }))
+              break
+            case 'artifact':
+              updateLast((t) => ({
+                ...t,
+                parts: [...t.parts, { kind: 'artifact', artifact: data.artifact as Artifact }],
+              }))
+              break
+            case 'error':
+              updateLast((t) => ({ ...t, error: data.message }))
+              break
+            case 'message.done':
+              updateLast((t) => ({ ...t, streaming: false, stopReason: data.stop_reason }))
+              break
+          }
+        }
+      } catch (e) {
+        if (!(e instanceof DOMException && e.name === 'AbortError')) {
+          updateLast((t) => ({ ...t, error: e instanceof Error ? e.message : String(e) }))
+        }
+      } finally {
+        controller = null
+        updateLast((t) => ({ ...t, streaming: false }))
+        set({ streaming: false })
+      }
+    },
+
+    stop: () => controller?.abort(),
+
+    newChat: async () => {
+      get().stop()
+      const conv = await api.newConversation()
+      useWorkspace.getState().setConversation(conv.id)
+      set({ turns: [] })
+    },
+  }
+})
