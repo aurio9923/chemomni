@@ -189,11 +189,18 @@ export function ChatPanel() {
           <MessageSquarePlus className="size-3.5" /> New chat
         </button>
       </header>
-      {config && !config.api_key_set && config.provider === 'openai' && (
-        <div className="border-b border-line bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          OPENAI_API_KEY is not set. Add it to <code>.env</code> at the repository root and restart the backend.
-        </div>
-      )}
+      {config && config.provider === 'openai' && (() => {
+        const selected = model ?? config.model
+        const claude = selected.startsWith('claude-')
+        const missing = claude ? !config.anthropic_key_set : !config.api_key_set
+        if (!missing) return null
+        return (
+          <div className="border-b border-line bg-amber-50 px-3 py-2 text-xs text-amber-800" role="status">
+            <code>{claude ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'}</code> is not set. Add it to <code>.env</code> at
+            the repository root and restart the backend.
+          </div>
+        )
+      })()}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {turns.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-1 text-center text-sm text-muted">

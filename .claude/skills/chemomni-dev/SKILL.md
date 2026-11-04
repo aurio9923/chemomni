@@ -125,6 +125,13 @@ Responses adapter converts them (`system` → `developer`, tool calls → `funct
 `function_call_output` items) and maps `response.output_text.delta`,
 `response.output_item.done` (function_call) and `response.completed` back to LLM events.
 
+### Anthropic (Claude models)
+
+`anthropic_provider.py`, chosen when the model name starts with `claude-`. All `system`
+messages go to the `system` parameter (static prompt first with `cache_control`), tool calls
+become `tool_use` blocks, tool results become `tool_result` blocks in one user turn. The
+anthropic SDK (2.x) uses its own `httpx2` fork: test with `httpx2.MockTransport`, not `httpx`.
+
 ### OpenAI-compatible streaming with tool calls (Chat Completions)
 
 ```python

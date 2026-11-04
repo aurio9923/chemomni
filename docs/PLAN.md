@@ -40,7 +40,7 @@
 
 ### Phase 2（MVP 後の候補）
 
-MCP クライアント（外部ツールの接続）/ 原子インデックス指定の編集ツール / アルゴリズム生成（R 基列挙、バイオアイソスター置換ルール、BRICS、mmpdb）/ 類似・部分構造検索（PubChem / ChEMBL）/ 反応式タブ / i18n / ダークテーマ / タブ並べ替え・結合 / 会話一覧・履歴要約 / クライアント側描画（RDKit.js / OpenChemLib）/ Ketcher 複数インスタンスの LRU 管理 / Anthropic・Gemini アダプタ
+MCP クライアント（外部ツールの接続）/ 原子インデックス指定の編集ツール / アルゴリズム生成（R 基列挙、バイオアイソスター置換ルール、BRICS、mmpdb）/ 類似・部分構造検索（PubChem / ChEMBL）/ 反応式タブ / i18n / ダークテーマ / タブ並べ替え・結合 / 会話一覧・履歴要約 / クライアント側描画（RDKit.js / OpenChemLib）/ Ketcher 複数インスタンスの LRU 管理 / Gemini アダプタ
 
 ### 対象外
 
@@ -245,7 +245,7 @@ class LLMProvider(Protocol):
 
 - `OpenAIChatProvider`: Chat Completions の `stream=True`。tool_call のチャンクは `index` ごとに蓄積し、`finish_reason` で確定する。`base_url` を変えるだけで OpenAI 互換サーバーが使える
 - `FakeProvider`: YAML / JSON の台本からイベントを再生する。テストと E2E はこれで API を使わない
-- Anthropic / Gemini は後からアダプタを足す（LiteLLM への置換も可能な粒度）
+- `AnthropicProvider`: Claude（`claude-` で始まるモデル名）。Gemini は後からアダプタを足す（LiteLLM への置換も可能な粒度）
 
 ### エージェントループ
 
@@ -413,7 +413,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q2 | 利用形態 | localhost 単一ユーザー、認証なし。`user_id` 列は持つ |
 | Q3 | アーキテクチャ | React/TS + FastAPI。Pure Python UI は不採用 |
 | Q4 | エディタ | Ketcher standalone（Apache-2.0）。商用品は除外 |
-| Q5 | LLM | MVP は OpenAI。他プロバイダ・ローカル LLM へ移行可能に |
+| Q5 | LLM | MVP は OpenAI。他プロバイダ・ローカル LLM へ移行可能に。M1 で Anthropic（`claude-haiku-5-5`）を追加し、UI で切り替え可能（`claude-` で始まるモデル名は Anthropic API） |
 | Q6 | AI ツール | 内部関数 + レジストリ。MCP は Phase 2 |
 | Q7 | AI 機能の順 | 物性 → 説明 → 編集 → 生成 → 名前→構造。検索・反応は後 |
 | Q8 | タブ | 1 タブ = Ketcher ドキュメント（KET 正本）。生成結果は 1 タブ + 分割 |

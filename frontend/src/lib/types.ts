@@ -126,4 +126,5 @@ export interface AppConfig {
   model: string
   models: string[]
   api_key_set: boolean
+  anthropic_key_set: boolean
 }

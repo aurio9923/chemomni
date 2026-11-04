@@ -13,6 +13,7 @@ from sse_starlette import EventSourceResponse
 from chemomni import db
 from chemomni.config import Settings
 from chemomni.db import ensure_default_workspace, get_session
+from chemomni.llm.anthropic_provider import AnthropicProvider
 from chemomni.llm.context import Snapshot
 from chemomni.llm.fake_provider import FakeProvider
 from chemomni.llm.loop import run_turn
@@ -28,11 +29,14 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 def make_provider(settings: Settings, model: str | None = None) -> LLMProvider:
     if settings.provider == "fake":
         return FakeProvider()
+    model = model or settings.model
+    if settings.is_anthropic(model):
+        return AnthropicProvider(api_key=settings.anthropic_api_key, model=model)
     cls = OpenAIResponsesProvider if settings.use_responses_api else OpenAIChatProvider
     return cls(
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
-        model=model or settings.model,
+        model=model,
         reasoning_effort=settings.reasoning_effort,
     )
 

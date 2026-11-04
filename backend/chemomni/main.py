@@ -41,6 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "model": settings.model,
             "models": settings.model_list,
             "api_key_set": bool(settings.openai_api_key) or bool(settings.openai_base_url),
+            "anthropic_key_set": bool(settings.anthropic_api_key),
         }
 
     static_dir = settings.static_dir or Path(__file__).resolve().parents[2] / "frontend" / "dist"
