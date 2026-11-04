@@ -432,7 +432,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q21 / Q44 | Ketcher エントリ | `binaryWasm`（描画込み）。画像出力は Ketcher 内蔵を使う |
 | Q22 | 編集方式 | SMILES 全体提案 + MCS 座標整合。原子指定ツールは Phase 1.5 |
 | Q23 | 生成方式 | LLM 提案 → RDKit 検証 → グリッドタブ。アルゴリズム系は Phase 2 |
-| Q24 / Q47 | 描画 | チャット・サムネイルは RDKit SVG（1 関数に隔離）。Indigo は後で差し替え可 |
+| Q24 / Q47 | 描画 | チャット・サムネイルは RDKit SVG（1 関数に隔離）。M1 の実画面でユーザーが了承し、RDKit のままで確定 |
 | Q25 | 物性セット | QED / SA score / PAINS・Brenk まで全部 MVP |
 | Q26 | タブ操作 | ソフト削除、復元、複製、import / export、分割。並べ替えは Phase 2 |
 | Q27 | フロント | Vite + React 19 + Tailwind + shadcn/ui + Zustand |
@@ -469,7 +469,8 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 ### M1 時点の状態
 
 - M1 のコードは完了。実際の OpenAI API での動作確認と、`gpt-6.1-sol` / `gpt-6.1-terra` の比較はユーザー環境で行う（開発環境に API キーを置かないため）
-- 描画エンジンの判断（RDKit のまま / Indigo に差し替え）は、実際のチャット画面を見て決める
+- 描画エンジンは RDKit のままで確定（2026-11-04、ユーザー確認）
+- モデル比較: ユーザーが `gpt-6.1-terra` を試用中
 - `gpt-6.1-sol` は Chat Completions でツールを使えないため、Responses API のアダプタを追加した（Q15 を更新）。内部のメッセージ形式は Chat Completions 形のままで、アダプタが変換する。ステートレス（`store=False`）で、推論アイテムはターン間で引き継がない
 - 発見: Ketcher 3.18 は読み込み中に `getSmiles` などを呼ぶと Promise が返らないことがある。`bridge.ts` で全操作を直列化し、読み取りはタイムアウト付きで再試行する
 
