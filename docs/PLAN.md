@@ -442,7 +442,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q31 | テスト | pytest + Vitest + Playwright スモーク、GitHub Actions |
 | Q32 | マイルストーン | M0〜M4、各段が記事 1 本 |
 | Q33 | GitHub 運用 | M0 まで main 直接、以降 PR |
-| Q34 | モデル | 暫定 `gpt-6.1-sol`。テストは Fake |
+| Q34 | モデル | 暫定 `gpt-6.1-sol`。テストは Fake。Chat Completions では tools と reasoning_effort を併用できないため、reasoning_effort の既定は `none`（拒否されたら自動で `none` に切り替え） |
 | Q35 | ループ方針 | ツール 8 回 / ターン、自己修正 2 回、LLM 60 秒 / ツール 30 秒、監査ログ |
 | Q36 | ツール一覧 | §6 の 7 種 |
 | Q37 | システムプロンプト | メディシナルケミストの相棒、検証必須、言語追従 |
@@ -470,6 +470,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 
 - M1 のコードは完了。実際の OpenAI API での動作確認と、`gpt-6.1-sol` / `gpt-6.1-terra` の比較はユーザー環境で行う（開発環境に API キーを置かないため）
 - 描画エンジンの判断（RDKit のまま / Indigo に差し替え）は、実際のチャット画面を見て決める
+- `gpt-6.1-sol` は Chat Completions で「ツール + 推論」を受け付けない。推論ありでツールを使うには Responses API のアダプタが必要。`none` での回答品質を見てから追加するか決める
 - 発見: Ketcher 3.18 は読み込み中に `getSmiles` などを呼ぶと Promise が返らないことがある。`bridge.ts` で全操作を直列化し、読み取りはタイムアウト付きで再試行する
 
 ### 実装上の既定値（私が選んだもの。変更は一言で可）

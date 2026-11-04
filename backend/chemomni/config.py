@@ -25,7 +25,9 @@ class Settings(BaseSettings):
 
     provider: Literal["openai", "fake"] = Field(default="openai", alias="CHEMOMNI_PROVIDER")
     model: str = Field(default="gpt-6.1-sol", alias="CHEMOMNI_MODEL")
-    reasoning_effort: str | None = Field(default="low", alias="CHEMOMNI_REASONING_EFFORT")
+    # "none" because some models reject tools + reasoning on Chat Completions (see openai_provider).
+    # Leave empty to omit the parameter (local OpenAI-compatible servers).
+    reasoning_effort: str | None = Field(default="none", alias="CHEMOMNI_REASONING_EFFORT")
     db_path: Path = Field(default=BACKEND_DIR / "data" / "chemomni.sqlite", alias="CHEMOMNI_DB")
     context_budget: int = Field(default=24000, alias="CHEMOMNI_CONTEXT_BUDGET")
     static_dir: Path | None = Field(default=None, alias="CHEMOMNI_STATIC_DIR")
