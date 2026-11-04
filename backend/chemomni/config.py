@@ -8,8 +8,18 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = BACKEND_DIR.parent
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # Read `.env` from the repository root and from `backend/` (the latter wins), regardless of
+    # the directory the server is started from. Real environment variables override both.
+    model_config = SettingsConfigDict(
+        env_file=(REPO_ROOT / ".env", BACKEND_DIR / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_base_url: str | None = Field(default=None, alias="OPENAI_BASE_URL")
@@ -17,7 +27,7 @@ class Settings(BaseSettings):
     provider: Literal["openai", "fake"] = Field(default="openai", alias="CHEMOMNI_PROVIDER")
     model: str = Field(default="gpt-6.1-sol", alias="CHEMOMNI_MODEL")
     reasoning_effort: str | None = Field(default="low", alias="CHEMOMNI_REASONING_EFFORT")
-    db_path: Path = Field(default=Path("./data/chemomni.sqlite"), alias="CHEMOMNI_DB")
+    db_path: Path = Field(default=BACKEND_DIR / "data" / "chemomni.sqlite", alias="CHEMOMNI_DB")
     context_budget: int = Field(default=24000, alias="CHEMOMNI_CONTEXT_BUDGET")
     static_dir: Path | None = Field(default=None, alias="CHEMOMNI_STATIC_DIR")
 

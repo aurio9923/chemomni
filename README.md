@@ -22,7 +22,7 @@ Requirements: Python 3.12+ with [uv](https://docs.astral.sh/uv/), Node 22+ with 
 ```bash
 # backend (http://127.0.0.1:8000)
 cd backend
-cp ../.env.example .env        # optional for M0
+cp ../.env.example ../.env     # .env at the repo root or in backend/ both work
 uv sync
 uv run uvicorn chemomni.main:app --reload
 
