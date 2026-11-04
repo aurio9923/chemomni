@@ -468,7 +468,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 
 ### M1 時点の状態
 
-- M1 のコードは完了。実際の OpenAI API での動作確認と、`gpt-6.1-sol` / `gpt-6.1-terra` の比較はユーザー環境で行う（開発環境に API キーを置かないため）
+- M1 完了。ユーザー環境で実 API の動作を確認済み（2026-11-04）: `gpt-6.1-sol` / `gpt-6.1-terra` / `gpt-6-luna`（OpenAI Responses API）、`claude-haiku-5-5`（Anthropic）。ユーザーの所感では低コストの `gpt-6-luna` で十分
 - 描画エンジンは RDKit のままで確定（2026-11-04、ユーザー確認）
 - モデル比較: チャット欄上部のプルダウンで送信ごとに切り替え可能にした（選択肢は `CHEMOMNI_MODELS`、選択はブラウザに記憶、各回答の下に回答モデル名を表示）
 - `gpt-6.1-sol` は Chat Completions でツールを使えないため、Responses API のアダプタを追加した（Q15 を更新）。内部のメッセージ形式は Chat Completions 形のままで、アダプタが変換する。ステートレス（`store=False`）で、推論アイテムはターン間で引き継がない
