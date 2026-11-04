@@ -17,8 +17,15 @@ def _sse(events: list[dict]) -> bytes:
 
 
 def _response(status: str, **extra: object) -> dict:
-    return {"id": "resp_1", "object": "response", "created_at": 0, "model": "gpt-6.1-sol", "status": status,
-            "output": [], **extra}  # fmt: skip
+    return {
+        "id": "resp_1",
+        "object": "response",
+        "created_at": 0,
+        "model": "gpt-6.1-sol",
+        "status": status,
+        "output": [],
+        **extra,
+    }
 
 
 STREAM = _sse(
@@ -32,7 +39,7 @@ STREAM = _sse(
             "content_index": 0,
             "delta": "Let me ",
             "logprobs": [],
-        },  # fmt: skip
+        },
         {
             "type": "response.output_text.delta",
             "sequence_number": 2,
@@ -41,7 +48,7 @@ STREAM = _sse(
             "content_index": 0,
             "delta": "check.",
             "logprobs": [],
-        },  # fmt: skip
+        },
         {
             "type": "response.output_item.done",
             "sequence_number": 3,
@@ -54,7 +61,7 @@ STREAM = _sse(
                 "arguments": '{"smiles": ["CCO"]}',
                 "status": "completed",
             },
-        },  # fmt: skip
+        },
         {
             "type": "response.completed",
             "sequence_number": 4,
@@ -68,7 +75,7 @@ STREAM = _sse(
                     "output_tokens_details": {"reasoning_tokens": 12},
                 },
             ),
-        },  # fmt: skip
+        },
     ]
 )
 
@@ -114,8 +121,12 @@ async def test_streams_text_and_function_calls() -> None:
         sent.append(json.loads(request.content))
         return httpx.Response(200, content=STREAM, headers={"content-type": "text/event-stream"})
 
-    tools = [{"type": "function", "function": {"name": "compute_properties", "description": "d",
-                                               "parameters": {"type": "object"}}}]  # fmt: skip
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "compute_properties", "description": "d", "parameters": {"type": "object"}},
+        }
+    ]
     events = [e async for e in _provider(handler).stream([{"role": "user", "content": "props"}], tools)]
 
     body = sent[0]
