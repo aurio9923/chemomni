@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from chemomni.chem.edit import selection_info
 from chemomni.llm.prompts import SYSTEM_PROMPT
 from chemomni.models import Message as MessageRow
 
@@ -20,6 +21,7 @@ class ActiveTabSnapshot(BaseModel):
     revision: int = 0
     smiles: list[str] = Field(default_factory=list)
     molfile: str | None = None
+    selection_atoms: list[int] = Field(default_factory=list, description="1-based molfile atom numbers")
 
 
 class TabSummary(BaseModel):
@@ -67,6 +69,13 @@ def snapshot_block(snap: Snapshot) -> str:
     else:
         lines.append("The active tab is empty.")
     lines.append("</active_tab>")
+    sel = selection_info(a.molfile, a.selection_atoms)
+    if sel:
+        pairs = ", ".join(f"{n}:{el}" for n, el in zip(sel["atoms"], sel["elements"], strict=True))  # type: ignore[arg-type]
+        lines.append(f"<selection>The user has selected atoms (molfile number:element) {pairs}.")
+        if sel["fragment_smiles"]:
+            lines.append(f"Selected fragment: {sel['fragment_smiles']}")
+        lines.append('"this", "here" or "the selected ..." refer to this selection.</selection>')
     return "\n".join(lines)
 
 

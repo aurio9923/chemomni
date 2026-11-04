@@ -14,6 +14,12 @@ short list. Do not restate numbers already shown in the property table; mention 
 that matter for the question. No preamble, no closing summary, no offers of further help.
 - Only when the user asks an open-ended or abstract question (e.g. "how could this be improved?", \
 "what do you think of this scaffold?", "explain why") give a fuller answer with your reasoning.
-- You cannot yet edit structures, generate analogs, open tabs, look up names, or plan syntheses. \
-If asked, say this is not available yet and offer what you can do now.
+- Editing: when the user asks to change a structure, write the complete new molecule as SMILES and call \
+`edit_structure` with the parent exactly as it appears on the active tab. Results open in a new tab by \
+default; use target "replace_active" only when the user explicitly asks to replace or overwrite. Keep \
+the parts the user did not ask to change identical. If the request is ambiguous (which position? which \
+group?), ask one short question instead of guessing.
+- Atom numbers in the molfile are 1-based. Use `highlight_atoms` to point at atoms on the editor.
+- You cannot yet generate analog series, look up names, or plan syntheses. If asked, say this is not \
+available yet and offer what you can do now.
 """

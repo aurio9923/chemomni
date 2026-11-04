@@ -13,6 +13,8 @@ const TOOL_LABELS: Record<string, string> = {
   validate_structures: 'Validating structures',
   similarity: 'Comparing similarity',
   substructure_search: 'Searching substructure',
+  edit_structure: 'Editing structure',
+  highlight_atoms: 'Highlighting atoms',
 }
 
 function ToolChip({ part }: { part: Extract<Part, { kind: 'tool' }> }) {

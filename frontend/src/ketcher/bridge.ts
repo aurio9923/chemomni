@@ -147,3 +147,102 @@ export async function getMolfileV3000(): Promise<string | null> {
     return null
   }
 }
+
+// ---- atom numbering ------------------------------------------------------------------------
+// The backend and the LLM speak 1-based molfile atom numbers; Ketcher's selection uses struct
+// atom ids. Molfiles come from Indigo and may order atoms differently (e.g. grouped by
+// fragment), so atoms are matched by element and position, not by index.
+
+interface MolfileAtom {
+  el: string
+  x: number
+  y: number
+}
+
+export function parseMolfileAtoms(molfile: string): MolfileAtom[] {
+  const atoms: MolfileAtom[] = []
+  let inAtoms = false
+  for (const line of molfile.split(/\r?\n/)) {
+    if (line.includes('BEGIN ATOM')) inAtoms = true
+    else if (line.includes('END ATOM')) break
+    else if (inAtoms && line.startsWith('M  V30 ')) {
+      const f = line.slice(7).trim().split(/\s+/)
+      atoms.push({ el: f[1], x: Number(f[2]), y: Number(f[3]) })
+    }
+  }
+  return atoms
+}
+
+interface StructAtom {
+  id: number
+  el: string
+  x: number
+  y: number
+}
+
+/** Match struct atoms to molfile atoms; returns molfile number (1-based) per struct id. */
+export function matchAtoms(structAtoms: StructAtom[], molAtoms: MolfileAtom[]): Map<number, number> {
+  const tol = 0.02
+  const tryMatch = (flipY: boolean) => {
+    const out = new Map<number, number>()
+    const used = new Set<number>()
+    for (const a of structAtoms) {
+      const y = flipY ? -a.y : a.y
+      const i = molAtoms.findIndex(
+        (m, idx) => !used.has(idx) && m.el === a.el && Math.abs(m.x - a.x) < tol && Math.abs(m.y - y) < tol,
+      )
+      if (i !== -1) {
+        used.add(i)
+        out.set(a.id, i + 1)
+      }
+    }
+    return out
+  }
+  // Ketcher's y axis points down; molfiles point up. Try both and keep the better match.
+  const flipped = tryMatch(true)
+  const straight = flipped.size === structAtoms.length ? flipped : tryMatch(false)
+  const best = straight.size > flipped.size ? straight : flipped
+  if (best.size === structAtoms.length) return best
+  // last resort: same order
+  return new Map(structAtoms.map((a, i) => [a.id, i + 1]))
+}
+
+function structAtoms(k: Ketcher): StructAtom[] {
+  const out: StructAtom[] = []
+  k.editor.struct().atoms.forEach((atom, id) => {
+    out.push({ id, el: atom.label, x: atom.pp.x, y: atom.pp.y })
+  })
+  return out
+}
+
+/** The current selection as 1-based molfile atom numbers of `molfile`. */
+export async function selectionAsMolfileAtoms(molfile: string | null): Promise<number[]> {
+  if (!molfile) return []
+  const k = await whenReady()
+  const selected = k.editor.selection()?.atoms ?? []
+  if (selected.length === 0) return []
+  const map = matchAtoms(structAtoms(k), parseMolfileAtoms(molfile))
+  return selected
+    .map((id) => map.get(id))
+    .filter((n): n is number => n !== undefined)
+    .sort((a, b) => a - b)
+}
+
+/** Select atoms given as 1-based molfile numbers (used by the AI's highlight_atoms tool). */
+export async function selectMolfileAtoms(numbers: number[]): Promise<void> {
+  const molfile = await getMolfileV3000()
+  if (!molfile) return
+  await enqueue(async (k) => {
+    const map = matchAtoms(structAtoms(k), parseMolfileAtoms(molfile))
+    const wanted = new Set(numbers)
+    const ids = [...map.entries()].filter(([, n]) => wanted.has(n)).map(([id]) => id)
+    k.editor.selection({ atoms: ids })
+  })
+}
+
+/** Undo the last editor action (used by the "Undo" button after an AI replace). */
+export function undo(): Promise<void> {
+  return enqueue(async (k) => {
+    k.editor.undo()
+  })
+}

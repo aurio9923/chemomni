@@ -1,6 +1,6 @@
-import { ExternalLink } from 'lucide-react'
+import { ArrowRight, ExternalLink } from 'lucide-react'
 
-import type { Artifact, PropertyRow, StructureItem } from '../lib/types'
+import type { Artifact, DiffPayload, DiffSide, PropertyRow, StructureItem } from '../lib/types'
 import { useWorkspace } from '../store/workspace'
 
 function svgUrl(svg: string): string {
@@ -117,7 +117,66 @@ function StructureSet({ title, items }: { title: string; items: StructureItem[] 
   )
 }
 
+function Delta({ label, before, after, digits = 2 }: { label: string; before: number; after: number; digits?: number }) {
+  const d = after - before
+  const sign = d > 0 ? '+' : ''
+  return (
+    <span className="whitespace-nowrap">
+      {label} {after.toFixed(digits)}{' '}
+      <span className={Math.abs(d) < 10 ** -digits ? 'text-muted' : 'text-ink'}>
+        ({sign}
+        {d.toFixed(digits)})
+      </span>
+    </span>
+  )
+}
+
+function DiffView({ p }: { p: DiffPayload }) {
+  const activate = useWorkspace((s) => s.activate)
+  const tabExists = useWorkspace((s) => s.tabs.some((t) => t.id === p.tab_id))
+  const where =
+    p.applied === 'replaced'
+      ? `Replaced on “${p.tab_name}”`
+      : p.applied === 'new_tab_fallback'
+        ? `Opened in “${p.tab_name}” (the active tab changed meanwhile)`
+        : `Opened in “${p.tab_name}”`
+  const side = (s: DiffSide, label: string) => (
+    <div className="flex flex-col items-center">
+      <Thumb item={{ smiles: s.smiles, svg: s.svg, label, molfile: null }} />
+      <span className="text-[11px] text-muted">{label}</span>
+    </div>
+  )
+  return (
+    <figure className="rounded-lg border border-line" data-testid="artifact-diff">
+      <figcaption className="flex items-center justify-between border-b border-line bg-panel px-3 py-1.5 text-xs">
+        <span className="font-medium text-muted">{p.title}</span>
+        {tabExists && (
+          <button type="button" className="text-accent hover:underline" onClick={() => void activate(p.tab_id)}>
+            {where}
+          </button>
+        )}
+      </figcaption>
+      <div className="flex items-center justify-center gap-2 p-2">
+        {side(p.before, 'before')}
+        <ArrowRight className="size-4 shrink-0 text-muted" />
+        {side(p.after, 'after')}
+      </div>
+      {p.before.ok && p.after.ok && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-line px-3 py-1.5 text-xs text-muted tabular-nums">
+          <span className="text-ink">{p.after.formula}</span>
+          <Delta label="MW" before={p.before.mw} after={p.after.mw} />
+          <Delta label="cLogP" before={p.before.clogp} after={p.after.clogp} />
+          <Delta label="TPSA" before={p.before.tpsa} after={p.after.tpsa} digits={1} />
+          <Delta label="HBD" before={p.before.hbd} after={p.after.hbd} digits={0} />
+          <Delta label="HBA" before={p.before.hba} after={p.after.hba} digits={0} />
+        </div>
+      )}
+    </figure>
+  )
+}
+
 export function ArtifactView({ artifact }: { artifact: Artifact }) {
+  if (artifact.type === 'diff') return <DiffView p={artifact.payload} />
   if (artifact.type === 'table') return <PropertyTable title={artifact.payload.title} rows={artifact.payload.rows} />
   if (artifact.type === 'structure_set')
     return <StructureSet title={artifact.payload.title} items={artifact.payload.items} />

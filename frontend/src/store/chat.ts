@@ -4,6 +4,7 @@ import * as ketcher from '../ketcher/bridge'
 import { api } from '../lib/api'
 import { readSSE } from '../lib/sse'
 import type { AppConfig, Artifact, Part, StoredMessage, Turn } from '../lib/types'
+import { useToast } from './toast'
 import { useWorkspace } from './workspace'
 
 const MODEL_KEY = 'chemomni.model'
@@ -33,13 +34,18 @@ interface ChatState {
 let controller: AbortController | null = null
 
 async function buildSnapshot() {
+  // save pending edits first so the snapshot's revision matches the stored document
+  await useWorkspace.getState().flush()
   const ws = useWorkspace.getState()
   const active = ws.tabs.find((t) => t.id === ws.activeTabId)
   const [read, molfile] = await Promise.all([ketcher.getComponentSmiles(), ketcher.getMolfileV3000()])
+  const selection = await ketcher.selectionAsMolfileAtoms(molfile)
   // If Ketcher could not be read (see bridge.ts), fall back to the last autosaved SMILES of the tab.
   const smiles = read.length > 0 ? read : (active?.smiles_cache ?? [])
   return {
-    active_tab: active ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile } : null,
+    active_tab: active
+      ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile, selection_atoms: selection }
+      : null,
     tabs: ws.tabs.map((t) => ({
       id: t.id,
       name: t.name,
@@ -171,6 +177,18 @@ export const useChat = create<ChatState>((set, get) => {
                 ...t,
                 parts: [...t.parts, { kind: 'artifact', artifact: data.artifact as Artifact }],
               }))
+              break
+            case 'tab.create':
+              await useWorkspace.getState().addTab(data.tab, data.activate)
+              break
+            case 'tab.replace':
+              await useWorkspace.getState().applyReplace(data)
+              break
+            case 'tab.replace_rejected':
+              useToast.getState().show('You edited the tab while the assistant was working, so the result opened in a new tab.')
+              break
+            case 'highlight':
+              if (data.tab_id === useWorkspace.getState().activeTabId) await ketcher.selectMolfileAtoms(data.atoms)
               break
             case 'error':
               updateLast((t) => ({ ...t, error: data.message }))

@@ -21,6 +21,9 @@ class ToolContext:
     call_id: str
     emit_artifact: Callable[[str, dict[str, Any]], Awaitable[str]]
     snapshot: dict[str, Any] = field(default_factory=dict)
+    # UI events (tab.create, tab.replace, ...) are queued and streamed after the tool finishes.
+    emit_event: Callable[[str, dict[str, Any]], None] = lambda name, data: None
+    session: Any = None  # AsyncSession of the current turn
 
 
 @dataclass(frozen=True)

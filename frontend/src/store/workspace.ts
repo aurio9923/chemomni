@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import * as ketcher from '../ketcher/bridge'
 import { ApiError, api } from '../lib/api'
 import type { Tab } from '../lib/types'
+import { useToast } from './toast'
 
 const AUTOSAVE_MS = 500
 
@@ -25,6 +26,10 @@ interface WorkspaceState {
   renameTab: (id: string, name: string) => Promise<void>
   openStructures: (name: string, items: { molfile: string | null; smiles: string }[]) => Promise<void>
   setConversation: (id: string) => void
+  /** A tab created by the AI (SSE `tab.create`). */
+  addTab: (tab: Tab, activate: boolean) => Promise<void>
+  /** The AI replaced a tab's document (SSE `tab.replace`). */
+  applyReplace: (r: { tab_id: string; content: string; content_format: 'ket' | 'mol'; revision: number; smiles: string[] }) => Promise<void>
   markDirty: () => void
   flush: () => Promise<void>
 }
@@ -160,6 +165,43 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
     },
 
     setConversation: (id) => set({ conversationId: id }),
+
+    addTab: async (tab, activate) => {
+      if (get().tabs.some((t) => t.id === tab.id)) return
+      set((s) => ({ tabs: [...s.tabs, tab] }))
+      if (activate) await get().activate(tab.id)
+    },
+
+    applyReplace: async (r) => {
+      const tab = get().tabs.find((t) => t.id === r.tab_id)
+      if (!tab) return
+      const updated: Tab = {
+        ...tab,
+        content: r.content,
+        content_format: r.content_format,
+        revision: r.revision,
+        smiles_cache: r.smiles,
+      }
+      if (r.tab_id !== get().activeTabId) {
+        patchTab(updated)
+        useToast.getState().show(`“${tab.name}” was updated by the assistant.`)
+        return
+      }
+      // drop any pending autosave of the old document, then load without clearing history so Undo works
+      if (saveTimer) {
+        clearTimeout(saveTimer)
+        saveTimer = null
+      }
+      await saveChain
+      patchTab(updated)
+      await ketcher.load(r.content, { clearHistory: false })
+      useToast.getState().show(`Replaced “${tab.name}”.`, {
+        label: 'Undo',
+        run: () => {
+          void ketcher.undo()
+        },
+      })
+    },
 
     markDirty: () => {
       if (saveTimer) clearTimeout(saveTimer)

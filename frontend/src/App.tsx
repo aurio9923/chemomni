@@ -4,6 +4,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels'
 import { ChatPanel } from './components/ChatPanel'
 import { PropertyBar } from './components/PropertyBar'
 import { TabBar } from './components/TabBar'
+import { Toasts } from './components/Toasts'
 import { useWorkspace } from './store/workspace'
 
 const KetcherEditor = lazy(() => import('./ketcher/KetcherEditor'))
@@ -32,6 +33,7 @@ export default function App() {
               <Suspense fallback={<div className="p-6 text-sm text-muted">Loading editor…</div>}>
                 <KetcherEditor />
               </Suspense>
+              <Toasts />
             </div>
             <PropertyBar />
           </main>

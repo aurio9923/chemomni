@@ -76,6 +76,11 @@ document is being loaded with `setMolecule` can stay pending forever. `bridge.ts
 serializes every operation through one queue and retries reads with a 1.5 s timeout. Never call
 the Ketcher instance directly from components or tests; tests use `window.chemomniBridge`.
 
+**Atom numbering (verified):** the LLM and backend use 1-based molfile atom numbers; Ketcher
+selection uses struct atom ids. Molfiles come from Indigo and can be ordered per fragment, so
+`bridge.ts` matches atoms by element and position (Ketcher's y axis is flipped) — see
+`matchAtoms`, `selectionAsMolfileAtoms`, `selectMolfileAtoms`. Never map by index.
+
 Tab switching with one shared instance:
 
 ```ts
