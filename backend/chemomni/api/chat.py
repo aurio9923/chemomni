@@ -17,6 +17,7 @@ from chemomni.llm.context import Snapshot
 from chemomni.llm.fake_provider import FakeProvider
 from chemomni.llm.loop import run_turn
 from chemomni.llm.openai_provider import OpenAIChatProvider
+from chemomni.llm.openai_responses_provider import OpenAIResponsesProvider
 from chemomni.llm.provider import LLMProvider
 from chemomni.models import Artifact, Conversation, Message
 
@@ -27,7 +28,8 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 def make_provider(settings: Settings) -> LLMProvider:
     if settings.provider == "fake":
         return FakeProvider()
-    return OpenAIChatProvider(
+    cls = OpenAIResponsesProvider if settings.use_responses_api else OpenAIChatProvider
+    return cls(
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
         model=settings.model,

@@ -25,9 +25,19 @@ class Settings(BaseSettings):
 
     provider: Literal["openai", "fake"] = Field(default="openai", alias="CHEMOMNI_PROVIDER")
     model: str = Field(default="gpt-6.1-sol", alias="CHEMOMNI_MODEL")
-    # "none" because some models reject tools + reasoning on Chat Completions (see openai_provider).
+    # Which OpenAI API to call. "auto": Responses API for api.openai.com (required for tools on
+    # reasoning models such as gpt-6.1-sol), Chat Completions when OPENAI_BASE_URL points elsewhere
+    # (Ollama, vLLM, LM Studio).
+    openai_api: Literal["auto", "responses", "chat"] = Field(default="auto", alias="CHEMOMNI_OPENAI_API")
     # Leave empty to omit the parameter (local OpenAI-compatible servers).
-    reasoning_effort: str | None = Field(default="none", alias="CHEMOMNI_REASONING_EFFORT")
+    reasoning_effort: str | None = Field(default="low", alias="CHEMOMNI_REASONING_EFFORT")
+
+    @property
+    def use_responses_api(self) -> bool:
+        if self.openai_api != "auto":
+            return self.openai_api == "responses"
+        return not self.openai_base_url
+
     db_path: Path = Field(default=BACKEND_DIR / "data" / "chemomni.sqlite", alias="CHEMOMNI_DB")
     context_budget: int = Field(default=24000, alias="CHEMOMNI_CONTEXT_BUDGET")
     static_dir: Path | None = Field(default=None, alias="CHEMOMNI_STATIC_DIR")

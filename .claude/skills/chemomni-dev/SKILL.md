@@ -115,6 +115,16 @@ async def compute_properties(args: ComputePropertiesIn, ctx: ToolContext) -> Too
   `ctx` (`ctx.emit_artifact(...)`, `ctx.create_tab(...)`). SVGs never go into the LLM payload.
 - Invalid input returns `{"ok": false, "errors": [...]}`; do not raise for chemistry errors.
 
+### Which OpenAI API
+
+`CHEMOMNI_OPENAI_API=auto` uses the **Responses API** (`openai_responses_provider.py`) for
+api.openai.com and **Chat Completions** (`openai_provider.py`) when `OPENAI_BASE_URL` is set.
+Verified: gpt-6.1-sol rejects function tools on Chat Completions with any `reasoning_effort`
+and rejects `reasoning_effort="none"`. Internal messages stay in Chat Completions shape; the
+Responses adapter converts them (`system` → `developer`, tool calls → `function_call` /
+`function_call_output` items) and maps `response.output_text.delta`,
+`response.output_item.done` (function_call) and `response.completed` back to LLM events.
+
 ### OpenAI-compatible streaming with tool calls (Chat Completions)
 
 ```python

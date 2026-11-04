@@ -423,7 +423,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q12 | リポジトリ | `chemomni`、monorepo、MIT、uv + pnpm |
 | Q13 | 環境 | WSL2 で開発、Docker で配布 |
 | Q14 | 計画書 | `docs/PLAN.md` |
-| Q15 | LLM 抽象 | 自前 `LLMProvider` + OpenAI Chat Completions（`base_url` 可変） |
+| Q15 | LLM 抽象 | 自前 `LLMProvider`。OpenAI 公式は Responses API、`OPENAI_BASE_URL` 指定時（ローカル LLM）は Chat Completions（`CHEMOMNI_OPENAI_API` で切替）。変更理由: `gpt-6.1-sol` は Chat Completions でツールを使えない（推論ありはツール不可、`none` は指定不可） |
 | Q16 | ブラウザ側操作 | スナップショット入力 + SSE アクション出力。WebSocket なし |
 | Q17 | チャット単位 | ワークスペースに 1 本、`@タブ名` で添付 |
 | Q18 | コンテキスト | アクティブタブ + 選択 + タブ一覧 + 直近会話。選択は MVP から |
@@ -442,7 +442,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 | Q31 | テスト | pytest + Vitest + Playwright スモーク、GitHub Actions |
 | Q32 | マイルストーン | M0〜M4、各段が記事 1 本 |
 | Q33 | GitHub 運用 | M0 まで main 直接、以降 PR |
-| Q34 | モデル | 暫定 `gpt-6.1-sol`。テストは Fake。Chat Completions では tools と reasoning_effort を併用できないため、reasoning_effort の既定は `none`（拒否されたら自動で `none` に切り替え） |
+| Q34 | モデル | 暫定 `gpt-6.1-sol`、reasoning effort `low`。テストは Fake |
 | Q35 | ループ方針 | ツール 8 回 / ターン、自己修正 2 回、LLM 60 秒 / ツール 30 秒、監査ログ |
 | Q36 | ツール一覧 | §6 の 7 種 |
 | Q37 | システムプロンプト | メディシナルケミストの相棒、検証必須、言語追従 |
@@ -470,7 +470,7 @@ M0 の前に: GitHub 権限の付与、スキルの検査と取り込み。
 
 - M1 のコードは完了。実際の OpenAI API での動作確認と、`gpt-6.1-sol` / `gpt-6.1-terra` の比較はユーザー環境で行う（開発環境に API キーを置かないため）
 - 描画エンジンの判断（RDKit のまま / Indigo に差し替え）は、実際のチャット画面を見て決める
-- `gpt-6.1-sol` は Chat Completions で「ツール + 推論」を受け付けない。推論ありでツールを使うには Responses API のアダプタが必要。`none` での回答品質を見てから追加するか決める
+- `gpt-6.1-sol` は Chat Completions でツールを使えないため、Responses API のアダプタを追加した（Q15 を更新）。内部のメッセージ形式は Chat Completions 形のままで、アダプタが変換する。ステートレス（`store=False`）で、推論アイテムはターン間で引き継がない
 - 発見: Ketcher 3.18 は読み込み中に `getSmiles` などを呼ぶと Promise が返らないことがある。`bridge.ts` で全操作を直列化し、読み取りはタイムアウト付きで再試行する
 
 ### 実装上の既定値（私が選んだもの。変更は一言で可）
