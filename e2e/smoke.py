@@ -343,7 +343,8 @@ def main() -> None:
             polling=200,
             timeout=5_000,
         )
-        assert sorted(ket_labels()) == ["1", "2", "3"]
+        labels = ket_labels()
+        assert sorted(labels) == ["1", "2", "3"], (labels, editor_smiles())
         expect(page.get_by_text("Numbered 3 structures: 1, 2, 3.")).to_be_visible()
         assert editor_components() == 3  # the numbers are text objects, not molecules
         page.get_by_role("button", name="Number compounds").click()  # nothing left to number
