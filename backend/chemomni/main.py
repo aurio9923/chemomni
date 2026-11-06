@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from chemomni import db
 from chemomni.api import chat, chem, tabs
 from chemomni.api.chat import make_provider
+from chemomni.chem.names import NameResolver
 from chemomni.config import Settings, get_settings
 from chemomni.static import mount_frontend
 
@@ -26,6 +27,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.provider = make_provider(settings)
     app.state.providers = {}
+    # shared by every chat turn: one cache and one PubChem rate limit for the whole app
+    app.state.services = {"names": NameResolver(pubchem=settings.pubchem)}
     app.include_router(tabs.router)
     app.include_router(chem.router)
     app.include_router(chat.router)

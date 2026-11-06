@@ -91,7 +91,7 @@ def _rdkit_depictor() -> Iterator[None]:
         rdDepictor.SetPreferCoordGen(previous)
 
 
-def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
+def align(new: Chem.Mol, template: Chem.Mol, mcs_timeout: int = MCS_TIMEOUT_S) -> tuple[Chem.Mol, list[int]]:
     """Lay out ``new`` on ``template``'s coordinates through their MCS. Returns (mol, changed atoms).
 
     The template is first brought to RDKit's bond length so the atoms RDKit adds match the
@@ -103,7 +103,7 @@ def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
     reference = _scale(template, factor)
     mcs = rdFMCS.FindMCS(
         [reference, new],
-        timeout=MCS_TIMEOUT_S,
+        timeout=mcs_timeout,
         ringMatchesRingOnly=True,
         completeRingsOnly=True,
         atomCompare=rdFMCS.AtomCompare.CompareElements,
@@ -129,6 +129,18 @@ def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
     return _scale(new, 1 / factor), changed
 
 
+def parent_template(parent: Chem.Mol, molfile: str | None) -> tuple[Chem.Mol, int | None, list[Chem.Mol]]:
+    """The parent as drawn on the user's tab if it is there, else a fresh layout.
+
+    Returns (template, index of the matching fragment or None, all fragments of the tab).
+    """
+    parent_can = canonical_smiles(parent)
+    fragments = _fragments_from_molfile(molfile)
+    match_idx = next((i for i, f in enumerate(fragments) if _safe_canonical(f) == parent_can), None)
+    template = fragments[match_idx] if match_idx is not None else _with_coords(parent)
+    return template, match_idx, fragments
+
+
 def edit(parent_smiles: str, new_smiles: str, molfile: str | None = None) -> EditResult:
     parent, err = parse_smiles(parent_smiles)
     if parent is None:
@@ -140,13 +152,8 @@ def edit(parent_smiles: str, new_smiles: str, molfile: str | None = None) -> Edi
     if parent_can == new_can:
         return EditResult(ok=False, errors=["the new structure is identical to the parent"])
 
-    fragments = _fragments_from_molfile(molfile)
-    match_idx = next(
-        (i for i, f in enumerate(fragments) if _safe_canonical(f) == parent_can),
-        None,
-    )
-    template = fragments[match_idx] if match_idx is not None else _with_coords(parent)
-    aligned, changed = _align(new, template)
+    template, match_idx, fragments = parent_template(parent, molfile)
+    aligned, changed = align(new, template)
 
     document = None
     if match_idx is not None:

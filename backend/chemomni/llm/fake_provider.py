@@ -44,13 +44,20 @@ class FakeProvider:
 
     @staticmethod
     def _rule_based(messages: list[Message]) -> ScriptTurn:
-        """Keywords in the user's message pick a tool: 'replace' / 'methyl' edit the first molecule,
-        'highlight' selects atom 1, anything else computes properties."""
+        """Keywords in the user's message pick a tool: 'analog' proposes a series, 'replace' / 'methyl'
+        edit the first molecule, 'highlight' selects atom 1, anything else computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
             result = json.loads(last["content"])
             if not result.get("ok"):
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "accepted" in result:
+                return [
+                    {
+                        "text": f"Proposed {len(result['accepted'])} analog(s) in tab {result['tab_name']}; "
+                        f"{len(result['rejected'])} rejected."
+                    }
+                ]
             if "applied" in result:
                 return [{"text": f"Done ({result['applied']}): {result['formula']} in tab {result['tab_name']}."}]
             if "atoms" in result and "rows" not in result:
@@ -74,6 +81,18 @@ class FakeProvider:
             return [{"text": "Draw a structure on the active tab first, then ask again."}]
         smiles = [line[2:].strip() for line in match.group(1).strip().splitlines()]
         text = str(last.get("content", "")).lower()
+        if "analog" in text:
+            parent = smiles[0]
+            # five valid analogs plus one duplicate, the parent itself and an invalid SMILES
+            prefixes = ("C", "F", "O", "N", "Cl")
+            candidates = [{"smiles": f"{p}{parent}", "rationale": f"{p} at the end"} for p in prefixes]
+            candidates += [
+                {"smiles": f"C{parent}", "rationale": "duplicate"},
+                {"smiles": parent, "rationale": "parent"},
+                {"smiles": "C1CC", "rationale": "broken ring"},
+            ]
+            args = {"parent_smiles": parent, "candidates": candidates, "title": "Analogs"}
+            return [{"tool": "propose_structures", "args": args}]
         if "replace" in text or "methyl" in text:
             target = "replace_active" if "replace" in text else "new_tab"
             args = {

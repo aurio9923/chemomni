@@ -81,6 +81,7 @@ async def chat(body: ChatRequest, request: Request) -> EventSourceResponse:
                 user_text=body.content,
                 snapshot=body.snapshot,
                 context_budget=settings.context_budget,
+                services=request.app.state.services,
             ):
                 yield {"event": name, "data": json.dumps(data, ensure_ascii=False)}
 
