@@ -17,8 +17,8 @@ practical knowledge needed to implement it. Update it when you learn something t
   Ruff uses a selected rule set (E, F, I, B, UP, SIM, RUF), not `ALL`. Type checking is optional.
 - Frontend: `pnpm tsc --noEmit`, `pnpm vitest run`, `pnpm build`.
 - Tests and E2E never call a real LLM: set `CHEMOMNI_PROVIDER=fake` and script the
-  `FakeProvider`. Its rule-based mode reacts to keywords (`analog`, `replace`, `methyl`,
-  `highlight`); E2E relies on them.
+  `FakeProvider`. Its rule-based mode reacts to keywords (`pyridine`, `fluor`, `analog`, `replace`,
+  `methyl`, `highlight`); E2E relies on them.
 - Run E2E with the preinstalled Playwright (`python3 e2e/smoke.py <url> <png> [grid.png]`);
   `uv run --with playwright` pulls a newer version that cannot find the installed browser.
 - Commits are small; after M0, work on feature branches and open PRs.
@@ -191,6 +191,13 @@ async for chunk in stream:
   `layout_smiles`). `chem/generate.py` aligns every proposal to the parent's template and shifts all of
   them by the template's centre, so the shared core sits at the same spot of each grid cell. `align()`
   already returns the template's scale; rescaling its output again moves the core slightly.
+- Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the operation (`substitute` a
+  group for H, or `replace_atom` to an element); RDKit enumerates positions on the selected atoms
+  (molfile numbers, mapped through an `_orig` atom property so removed explicit H cannot shift them),
+  merges symmetric results and names ortho/meta/para for a ring with one attachment point. Substituted
+  aromatic atoms (3 connections) are not positions for an element swap. For a swap the grid layout uses
+  `align(..., any_element=True)` (topology-only MCS) so the ring keeps the parent's drawing and only the
+  changed atom is highlighted. All generating tools end in `present_candidates()` (validate, grid tab, card).
 - `split_molfile` does not sanitize (explicit H and odd valences survive). KET tabs cannot be read by
   RDKit: the client sends the editor's molfile with `POST /api/tabs/{id}/split`.
 - Names: `chem/names.py` tries OPSIN (`uv sync --extra opsin`, needs Java; `py2opsin` returns `""`

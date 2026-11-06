@@ -2,14 +2,15 @@
 
 A chemical structure workspace that puts a ChemDraw-like editor ([Ketcher](https://github.com/epam/ketcher)) first and an LLM chat beside it. The AI computes properties, explains structures, edits them from natural language and proposes analogs — and its results land in the editor as new tabs.
 
-**Status:** M3 (generation). Polish (import/export, packaging, performance) comes next in M4.
+**Status:** M3 (generation and position scans). Polish (import/export, packaging, performance) comes next in M4.
 
 ## What it does
 
 - Editor tabs you create, rename, duplicate, close and reopen; autosaved to SQLite; a live property bar.
 - Chat about the active tab: properties (RDKit), validation, similarity, substructure search.
 - Edits in natural language (“add a fluorine para to the ester”), laid out on your own drawing, in a new tab or in place with Undo. Select atoms in the editor to point at them.
-- Analog series: the AI designs candidates, RDKit validates and deduplicates them, and they open together on one grid tab aligned to the parent, with a sortable table of properties and similarity. Split any multi-molecule tab into one tab per molecule.
+- Part-of-molecule changes: select a substructure (say a phenyl) and ask for a pyridine or a mono-fluorination. Every position is enumerated with RDKit (not guessed by the model), symmetric positions are merged, ortho/meta/para is named, and all variants open on one grid tab.
+- Proposals: the AI designs candidates, RDKit validates and deduplicates them, and they open together on one grid tab aligned to the parent, with a sortable table of properties and similarity. Split any multi-molecule tab into one tab per molecule.
 - Names to structures: OPSIN offline when installed, then PubChem.
 - Models: OpenAI (Responses API), Anthropic Claude, or any OpenAI-compatible server (Ollama, vLLM), switchable from the chat header.
 

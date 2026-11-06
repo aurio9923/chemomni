@@ -261,6 +261,51 @@ def main() -> None:
         )
         assert editor_components() == 1
 
+        # ---- select a phenyl in the editor, ask for a pyridine: every position at once ----
+        page.get_by_role("button", name="New tab", exact=True).click()
+        page.wait_for_timeout(300)
+        set_structure(page, "CC(=O)Nc1ccccc1")
+        expect(page.get_by_test_id("property-bar")).to_contain_text("C8H9NO", timeout=5_000)
+        page.wait_for_timeout(800)  # autosave
+        ring_size = page.evaluate(
+            """() => {
+                const k = window.chemomniKetcher
+                const adj = new Map()
+                k.editor.struct().bonds.forEach((b) => {
+                    for (const [x, y] of [[b.begin, b.end], [b.end, b.begin]]) {
+                        if (!adj.has(x)) adj.set(x, [])
+                        adj.get(x).push(y)
+                    }
+                })
+                let ring = null
+                const walk = (start, cur, path) => {
+                    if (ring) return
+                    if (path.length === 6) {
+                        if (adj.get(cur).includes(start)) ring = [...path]
+                        return
+                    }
+                    for (const n of adj.get(cur)) if (!path.includes(n)) walk(start, n, [...path, n])
+                }
+                adj.forEach((_, id) => walk(id, id, [id]))
+                k.editor.selection({ atoms: ring })
+                return ring ? ring.length : 0
+            }"""
+        )
+        assert ring_size == 6
+        n_tabs = tabs.count()
+        send("make the selected phenyl a pyridine")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(active_tab).to_contain_text("Pyridine scan")
+        scan_grid = page.get_by_test_id("artifact-grid").last
+        expect(scan_grid.get_by_test_id("grid-card")).to_have_count(3)
+        for position in ("ortho", "meta", "para"):
+            expect(scan_grid).to_contain_text(f"N at {position}")
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 3", polling=200, timeout=5_000
+        )
+        if len(sys.argv) > 4:
+            page.screenshot(path=sys.argv[4])
+
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
         browser.close()
