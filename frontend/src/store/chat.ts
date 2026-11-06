@@ -38,13 +38,17 @@ async function buildSnapshot() {
   await useWorkspace.getState().flush()
   const ws = useWorkspace.getState()
   const active = ws.tabs.find((t) => t.id === ws.activeTabId)
-  const [read, molfile] = await Promise.all([ketcher.getComponentSmiles(), ketcher.getMolfileV3000()])
+  const [read, molfile, ket] = await Promise.all([
+    ketcher.getComponentSmiles(),
+    ketcher.getMolfileV3000(),
+    ketcher.getKet().catch(() => null), // the numbers written next to structures live in the KET
+  ])
   const selection = await ketcher.selectionAsMolfileAtoms(molfile)
   // If Ketcher could not be read (see bridge.ts), fall back to the last autosaved SMILES of the tab.
   const smiles = read.length > 0 ? read : (active?.smiles_cache ?? [])
   return {
     active_tab: active
-      ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile, selection_atoms: selection }
+      ? { id: active.id, name: active.name, revision: active.revision, smiles, molfile, ket, selection_atoms: selection }
       : null,
     tabs: ws.tabs.map((t) => ({
       id: t.id,

@@ -44,6 +44,8 @@ export const api = {
   /** One new tab per molecule. Pass the editor's molfile for the active tab (KET is not readable server-side). */
   splitTab: (id: string, molfile: string | null) =>
     request<Tab[]>('POST', `/api/tabs/${id}/split`, molfile ? { molfile } : undefined),
+  numberCompounds: (ket: string) =>
+    request<{ ket: string; added: string[] }>('POST', '/api/chem/number-compounds', { ket }),
   closedTabs: () => request<Tab[]>('GET', '/api/tabs/closed'),
   config: () => request<AppConfig>('GET', '/api/config'),
   newConversation: () => request<{ id: string; title: string }>('POST', '/api/conversations'),

@@ -129,6 +129,16 @@ export function getKet(): Promise<string> {
   return read((k) => k.getKet())
 }
 
+/**
+ * Replace the document with an edited copy of itself (e.g. with compound numbers added). Unlike `load`
+ * this is a user-visible edit: it stays on the undo stack and triggers autosave.
+ */
+export function setKet(ket: string): Promise<void> {
+  return enqueue(async (k) => {
+    await k.setMolecule(ket)
+  })
+}
+
 /** Dot-separated components as individual SMILES; empty canvas or reactions give []. */
 export async function getComponentSmiles(): Promise<string[]> {
   try {

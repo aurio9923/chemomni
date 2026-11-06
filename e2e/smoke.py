@@ -321,6 +321,45 @@ def main() -> None:
             "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 10", polling=200, timeout=5_000
         )
 
+        # ---- M4: number the structures, then refer to them ----
+        page.get_by_role("button", name="New tab", exact=True).click()
+        page.wait_for_timeout(300)
+        set_structure(page, "CCO.c1ccccc1N.CC(=O)O")
+        expect(page.get_by_test_id("property-bar")).to_contain_text("C2H6O", timeout=5_000)
+        page.wait_for_timeout(800)  # autosave
+
+        def ket_labels() -> list[str]:
+            return page.evaluate(
+                """async () => {
+                    const ket = JSON.parse(await window.chemomniKetcher.getKet())
+                    return ket.root.nodes.filter((n) => n.type === 'text').map((n) => n.paragraphs[0].parts[0].text)
+                }"""
+            )
+
+        assert ket_labels() == []
+        page.get_by_role("button", name="Number compounds").click()
+        page.wait_for_function(
+            "async () => JSON.parse(await window.chemomniKetcher.getKet()).root.nodes.filter((n) => n.type === 'text').length === 3",
+            polling=200,
+            timeout=5_000,
+        )
+        assert sorted(ket_labels()) == ["1", "2", "3"]
+        expect(page.get_by_text("Numbered 3 structures: 1, 2, 3.")).to_be_visible()
+        assert editor_components() == 3  # the numbers are text objects, not molecules
+        page.get_by_role("button", name="Number compounds").click()  # nothing left to number
+        expect(page.get_by_text("Every structure already has a number")).to_be_visible()
+
+        # reading order: acetic acid (top row) is 1, ethanol 2, aniline 3. Compound 2 as the query finds
+        # ethanol's C-C-O inside acetic acid only.
+        n_before = page.get_by_test_id("artifact-structures").count()
+        send("use compound 2 as the query for a substructure search of the other compounds")
+        expect(page.get_by_text("1 of 2 structure(s) contain the query.")).to_be_visible()
+        hits = page.get_by_test_id("artifact-structures").last
+        expect(hits).to_contain_text("Matches for compound 2")
+        assert page.get_by_test_id("artifact-structures").count() == n_before + 1
+        if len(sys.argv) > 5:
+            page.screenshot(path=sys.argv[5])
+
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
         browser.close()

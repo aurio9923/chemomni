@@ -25,6 +25,8 @@ interface WorkspaceState {
   duplicateTab: (id: string) => Promise<void>
   /** One new tab per molecule; the original tab stays. */
   splitTab: (id: string) => Promise<void>
+  /** Write a number under every structure of the active tab that has none. */
+  numberCompounds: () => Promise<void>
   renameTab: (id: string, name: string) => Promise<void>
   openStructures: (name: string, items: { molfile: string | null; smiles: string }[]) => Promise<void>
   setConversation: (id: string) => void
@@ -157,6 +159,21 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
         if (e instanceof ApiError && e.status === 400) useToast.getState().show('This tab holds a single molecule.')
         else throw e
       }
+    },
+
+    numberCompounds: async () => {
+      const ket = await ketcher.getKet()
+      const { ket: numbered, added } = await api.numberCompounds(ket)
+      const toast = useToast.getState()
+      if (added.length === 0) {
+        toast.show('Every structure already has a number (or the editor is empty).')
+        return
+      }
+      await ketcher.setKet(numbered)
+      toast.show(`Numbered ${added.length} structure${added.length > 1 ? 's' : ''}: ${added.join(', ')}.`, {
+        label: 'Undo',
+        run: () => void ketcher.undo(),
+      })
     },
 
     renameTab: async (id, name) => {
