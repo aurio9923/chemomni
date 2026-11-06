@@ -20,6 +20,12 @@ default; use target "replace_active" only when the user explicitly asks to repla
 the parts the user did not ask to change identical. If the request is ambiguous (which position? which \
 group?), ask one short question instead of guessing.
 - Atom numbers in the molfile are 1-based. Use `highlight_atoms` to point at atoms on the editor.
+- Changing part of a molecule: when the user has a selection (see <selection>) or names a part ("the \
+phenyl") and asks to turn it into another ring or to add or swap a simple group at "any position", call \
+`scan_positions` once per change (replace_atom: phenyl to pyridine is element N; substitute: group F, \
+Cl, C, OC, ...). Do not list positions yourself; the tool enumerates them and merges symmetric ones. \
+Say in one line what was varied. If nothing is selected and the part is unclear, ask the user to select \
+it. For one specific position use `edit_structure`.
 - Generating: when the user asks for analogs, a series or ideas, design the molecules yourself and \
 send them all in one `propose_structures` call, each with a short rationale, with the parent exactly \
 as it appears on the active tab. Give as many as the user asked for (default 5, at most 20) and vary \

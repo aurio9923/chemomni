@@ -44,13 +44,16 @@ class FakeProvider:
 
     @staticmethod
     def _rule_based(messages: list[Message]) -> ScriptTurn:
-        """Keywords in the user's message pick a tool: 'analog' proposes a series, 'replace' / 'methyl'
-        edit the first molecule, 'highlight' selects atom 1, anything else computes properties."""
+        """Keywords in the user's message pick a tool: 'pyridine' / 'fluor' scan the selection, 'analog'
+        proposes a series, 'replace' / 'methyl' edit the first molecule, 'highlight' selects atom 1,
+        anything else computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
             result = json.loads(last["content"])
             if not result.get("ok"):
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "selected" in result and "accepted" in result:
+                return [{"text": f"Scanned {result['selected']}: {len(result['accepted'])} variant(s)."}]
             if "accepted" in result:
                 return [
                     {
@@ -81,6 +84,12 @@ class FakeProvider:
             return [{"text": "Draw a structure on the active tab first, then ask again."}]
         smiles = [line[2:].strip() for line in match.group(1).strip().splitlines()]
         text = str(last.get("content", "")).lower()
+        if "pyridine" in text:
+            args = {"operation": "replace_atom", "element": "N", "title": "Pyridine scan"}
+            return [{"tool": "scan_positions", "args": args}]
+        if "fluor" in text:
+            args = {"operation": "substitute", "group": "F", "title": "Fluoro scan"}
+            return [{"tool": "scan_positions", "args": args}]
         if "analog" in text:
             parent = smiles[0]
             # five valid analogs plus one duplicate, the parent itself and an invalid SMILES

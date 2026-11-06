@@ -43,7 +43,13 @@ class Evaluation:
     grid_molblock: str | None = None
 
 
-def evaluate(parent_smiles: str | None, candidates: list[tuple[str, str]], molfile: str | None = None) -> Evaluation:
+def evaluate(
+    parent_smiles: str | None,
+    candidates: list[tuple[str, str]],
+    molfile: str | None = None,
+    *,
+    any_element: bool = False,
+) -> Evaluation:
     """``candidates`` are (SMILES, rationale) pairs; ``molfile`` is the active tab (for the layout)."""
     parent = None
     if parent_smiles:
@@ -71,7 +77,7 @@ def evaluate(parent_smiles: str | None, candidates: list[tuple[str, str]], molfi
     if not chosen:
         return Evaluation(ok=False, errors=["no valid new structures"], parent_smiles=parent_can, rejected=rejected)
 
-    placed, changed = _layout(parent, [m for m, _, _ in chosen], molfile)
+    placed, changed = _layout(parent, [m for m, _, _ in chosen], molfile, any_element)
     parent_fp = _morgan.GetFingerprint(parent) if parent is not None else None
     accepted = [
         Accepted(
@@ -101,7 +107,7 @@ def evaluate(parent_smiles: str | None, candidates: list[tuple[str, str]], molfi
 
 
 def _layout(
-    parent: Chem.Mol | None, mols: list[Chem.Mol], molfile: str | None
+    parent: Chem.Mol | None, mols: list[Chem.Mol], molfile: str | None, any_element: bool = False
 ) -> tuple[list[Chem.Mol], list[list[int]]]:
     """Coordinates for each molecule (plus the parent last, when there is one).
 
@@ -117,7 +123,7 @@ def _layout(
     placed, changed = [], []
     for mol in mols:
         # align() returns coordinates at the template's scale (1.0 here)
-        aligned, diff = align(mol, template, mcs_timeout=GRID_MCS_TIMEOUT_S)
+        aligned, diff = align(mol, template, mcs_timeout=GRID_MCS_TIMEOUT_S, any_element=any_element)
         shares_core = len(diff) < mol.GetNumAtoms()
         placed.append(centred(aligned, centre) if shares_core else centred(aligned))
         changed.append(diff)

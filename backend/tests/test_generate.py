@@ -346,3 +346,22 @@ async def test_name_to_structure_tool(client: httpx.AsyncClient, no_opsin: None)
     assert result["ok"] and result["summary"] == "pubchem: ethanol"
     art = next(d["artifact"] for n, d in events if n == "artifact")
     assert art["payload"]["items"][0]["smiles"] == "CCO"
+
+
+def test_swapping_one_atom_keeps_the_parents_drawing_and_marks_only_that_atom() -> None:
+    from chemomni.chem.layout import to_ketcher_scale
+
+    parent = to_ketcher_scale(_mol("CC(=O)Nc1ccccc1"))
+    para = "CC(=O)Nc1ccncc1"
+    r = evaluate("CC(=O)Nc1ccccc1", [(para, "N at para")], Chem.MolToV3KMolBlock(parent), any_element=True)
+    accepted = r.accepted[0]
+    cand = Chem.MolFromMolBlock(accepted.molblock)
+    # exactly the nitrogen is marked as changed
+    assert [cand.GetAtomWithIdx(i).GetSymbol() for i in accepted.changed_atoms] == ["N"]
+    # every atom of the pyridine sits where an atom of the parent was drawn
+    reference = Chem.MolFromMolBlock(r.parent_molblock)
+
+    def where(m: Chem.Mol) -> list[tuple[float, float]]:
+        return sorted((round(float(x), 1), round(float(y), 1)) for x, y, _ in m.GetConformer().GetPositions())
+
+    assert where(cand) == where(reference)

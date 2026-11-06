@@ -1,10 +1,10 @@
-"""M3 tools: analog proposals on a grid tab, opening structures, names to structures (PLAN §6)."""
+"""M3 tools: proposals and position scans on a grid tab, opening structures, names (PLAN §6)."""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
 
 from chemomni.api.tabs import create_tab
@@ -13,6 +13,7 @@ from chemomni.chem.generate import Evaluation, evaluate
 from chemomni.chem.layout import layout_smiles
 from chemomni.chem.names import NameResolver
 from chemomni.chem.props import canonical_smiles, parse_smiles
+from chemomni.chem.scan import scan, target_from_selection, target_from_smarts
 from chemomni.models import TabRead
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
@@ -55,6 +56,7 @@ def _compact(item: dict[str, Any]) -> dict[str, Any]:
     keys = ("smiles", "similarity", "mw", "clogp", "tpsa", "qed", "sa_score", "lipinski_violations")
     return {
         "n": item["index"],
+        "note": item["rationale"],
         **{k: item[k] for k in keys},
         "alerts": len(item["pains_alerts"]) + len(item["brenk_alerts"]),
     }
@@ -72,16 +74,33 @@ def _compact(item: dict[str, Any]) -> dict[str, Any]:
     summary=_summary_propose,
 )
 async def propose_structures_tool(args: ProposeIn, ctx: ToolContext) -> ToolResult:
-    active = ctx.snapshot.get("active_tab") or {}
     pairs = [(c.smiles, c.rationale) for c in args.candidates]
-    result: Evaluation = await run_in_threadpool(evaluate, args.parent_smiles, pairs, active.get("molfile"))
+    return await present_candidates(ctx, args.title, args.parent_smiles, pairs)
+
+
+async def present_candidates(
+    ctx: ToolContext,
+    title: str,
+    parent_smiles: str | None,
+    pairs: list[tuple[str, str]],
+    *,
+    molfile: str | None = None,
+    skipped: list[dict[str, str]] | None = None,
+    any_element: bool = False,
+) -> ToolResult:
+    """Validate candidates, open them on a grid tab, show the card; shared by every generating tool."""
+    active = ctx.snapshot.get("active_tab") or {}
+    result: Evaluation = await run_in_threadpool(
+        lambda: evaluate(parent_smiles, pairs, molfile or active.get("molfile"), any_element=any_element)
+    )
+    rejected = [*result.rejected, *(skipped or [])]
     if not result.ok:
-        return {"ok": False, "errors": result.errors, "rejected": result.rejected}
+        return {"ok": False, "errors": result.errors, "rejected": rejected}
 
     tab = await create_tab(
         ctx.session,
         ctx.workspace_id,
-        name=args.title,
+        name=title,
         content_format="mol",
         content=result.grid_molblock or "",
         smiles=[a.smiles for a in result.accepted],
@@ -115,12 +134,12 @@ async def propose_structures_tool(args: ProposeIn, ctx: ToolContext) -> ToolResu
     await ctx.emit_artifact(
         "grid",
         {
-            "title": args.title,
+            "title": title,
             "tab_id": tab.id,
             "tab_name": tab.name,
             "parent": parent,
             "items": items,
-            "rejected": result.rejected,
+            "rejected": rejected,
         },
     )
     return {
@@ -129,8 +148,109 @@ async def propose_structures_tool(args: ProposeIn, ctx: ToolContext) -> ToolResu
         "tab_name": tab.name,
         "parent_smiles": result.parent_smiles,
         "accepted": [_compact(i) for i in items],
-        "rejected": result.rejected,
+        "rejected": rejected,
     }
+
+
+# ---------------------------------------------------------------- scan_positions
+
+
+class ScanIn(BaseModel):
+    operation: Literal["substitute", "replace_atom"] = Field(
+        ...,
+        description="substitute: replace one hydrogen by `group` at every possible position (mono-fluorination, "
+        "methylation, ...). replace_atom: change one atom to `element` at every possible position "
+        "(phenyl -> pyridine is element N, thiophene from benzene is S, ...).",
+    )
+    group: str | None = Field(
+        None,
+        description="For substitute: the substituent as SMILES; its first atom attaches. "
+        "F, Cl, C, OC, N, O, C#N, C(F)(F)F, C(=O)O, [N+](=O)[O-].",
+    )
+    element: Literal["N", "O", "S", "C"] | None = Field(None, description="For replace_atom: the new element.")
+    atoms: list[int] | None = Field(
+        None,
+        max_length=200,
+        description="1-based molfile atom numbers to change. Omit to use the atoms the user has selected.",
+    )
+    smarts: str | None = Field(
+        None,
+        description="Name the part by SMARTS when nothing is selected, e.g. 'c1ccccc1' for every phenyl. "
+        "Needs parent_smiles if the active tab holds several molecules.",
+    )
+    parent_smiles: str | None = Field(None, description="Only with smarts: the molecule to search.")
+    title: str = Field(..., max_length=60, description="Short tab name, e.g. 'Pyridine scan'.")
+
+    @model_validator(mode="after")
+    def _operation_arguments(self) -> ScanIn:
+        if self.operation == "substitute" and not self.group:
+            raise ValueError("group is required for substitute")
+        if self.operation == "replace_atom" and not self.element:
+            raise ValueError("element is required for replace_atom")
+        return self
+
+
+def _summary_scan(r: ToolResult) -> str:
+    if not r.get("ok"):
+        return "nothing to scan"
+    return f"{len(r['accepted'])} variant(s) of {r['selected']}"
+
+
+@tool(
+    name="scan_positions",
+    description=(
+        "Try one simple change at every possible position of part of a molecule and show all variants "
+        "at once: the part the user selected in the editor (a phenyl, a ring, a side chain), or a part you "
+        "name with SMARTS. Use it for requests like 'make this phenyl a pyridine' (replace_atom N), "
+        "'monofluorinate this ring' or 'try methyl, chloro and fluoro here' (substitute; call once per group). "
+        "Positions that are the same by symmetry are merged, and ortho/meta/para is named for a ring with "
+        "one attachment point. Do not enumerate positions yourself and do not use it when the user wants "
+        "one specific position (use edit_structure). If nothing is selected, ask the user to select the part."
+    ),
+    summary=_summary_scan,
+)
+async def scan_positions_tool(args: ScanIn, ctx: ToolContext) -> ToolResult:
+    active = ctx.snapshot.get("active_tab") or {}
+    molfile = active.get("molfile")
+    selection = active.get("selection_atoms") or []
+    if args.atoms or (selection and not args.smarts):
+        if not molfile:
+            return {"ok": False, "errors": ["the editor content is not available; name the part with smarts"]}
+        target, err = await run_in_threadpool(target_from_selection, molfile, args.atoms or selection)
+    elif args.smarts:
+        parent = args.parent_smiles or _single_molecule(active)
+        if parent is None:
+            return {"ok": False, "errors": ["the active tab holds several molecules; pass parent_smiles"]}
+        target, err = await run_in_threadpool(target_from_smarts, parent, args.smarts)
+    else:
+        return {
+            "ok": False,
+            "errors": ["nothing is selected: ask the user to select the part to change in the editor"],
+        }
+    if target is None:
+        return {"ok": False, "errors": [err or "could not find the atoms"]}
+
+    scanned = await run_in_threadpool(scan, target, args.operation, group=args.group, element=args.element)
+    if not scanned.ok:
+        return {"ok": False, "errors": scanned.errors, "selected": scanned.selected_smiles}
+    result = await present_candidates(
+        ctx,
+        args.title,
+        scanned.parent_smiles,
+        scanned.candidates,
+        molfile=molfile,
+        skipped=scanned.skipped,
+        any_element=args.operation == "replace_atom",
+    )
+    if result.get("ok"):
+        result["selected"] = scanned.selected_smiles
+        result["equivalent_positions_merged"] = scanned.merged
+    return result
+
+
+def _single_molecule(active: dict[str, Any]) -> str | None:
+    smiles = active.get("smiles") or []
+    return smiles[0] if len(smiles) == 1 else None
 
 
 # ---------------------------------------------------------------- open_in_new_tab
