@@ -324,12 +324,15 @@ async def test_edit_structure_takes_a_number(client: httpx.AsyncClient) -> None:
     tab = await _tab(client)
     conv = (await client.get("/api/workspace")).json()["conversation_id"]
     args = {"parent_ref": "1", "new_smiles": "CCCO", "description": "propanol", "target": "new_tab"}
-    client._transport.app.state.provider = FakeProvider(
-        [[{"tool": "edit_structure", "args": args, "id": "e"}], [{"text": "ok"}]]
-    )  # type: ignore[attr-defined]
+    script = [[{"tool": "edit_structure", "args": args, "id": "e"}], [{"text": "ok"}]]
+    client._transport.app.state.provider = FakeProvider(script)  # type: ignore[attr-defined]
     events = await chat(client, conv, "edit 1", _snapshot(tab))
-    assert any(n == "tab.create" for n, _ in events)
-    assert [d for n, d in events if n == "error"] == []
+    # the tool must succeed as a whole: a failure after the tab was created made the model retry
+    # and open the same edit again and again (seen in real use)
+    assert next(d for n, d in events if n == "tool.result")["ok"] is True
+    assert sum(1 for n, _ in events if n == "tab.create") == 1
+    diff = next(d["artifact"] for n, d in events if n == "artifact")
+    assert diff["type"] == "diff" and diff["payload"]["before"]["smiles"] == "CCO"
 
 
 async def test_number_compounds_endpoint(client: httpx.AsyncClient) -> None:

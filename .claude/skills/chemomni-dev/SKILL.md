@@ -192,6 +192,14 @@ async for chunk in stream:
   `layout_smiles`). `chem/generate.py` aligns every proposal to the parent's template and shifts all of
   them by the template's centre, so the shared core sits at the same spot of each grid cell. `align()`
   already returns the template's scale; rescaling its output again moves the core slightly.
+- One grid, several parents (PLAN Q58): `evaluate(parent, candidates, molfile)` takes `(smiles, rationale)`
+  or `(smiles, rationale, parent_smiles)`; a candidate's own parent wins over the default parent. Without
+  any named parent the layout follows the most similar structure on the tab (`_closest_on_tab`, Morgan
+  Tanimoto >= 0.3, layout only, no similarity column); unrelated ideas get a plain layout. Each parent has
+  its own template and each candidate is centred on its own template, so every result keeps the drawing
+  of its own parent. The grid has a parent card and similarity only when all candidates share one parent;
+  grid items always carry `parent_smiles`. Tests: `tests/test_series_layout.py` (drift of MCS atoms after
+  removing a translation; the plain layout is the control and must drift > 0.5).
 - Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the changes (`substitute` a
   group for H, or `replace_atom` to an element; `changes` takes up to three and they are combined: every
   way of giving each change its own atom, identical changes not counted in both orders, results merged by

@@ -79,6 +79,14 @@ async def edit_structure_tool(args: EditStructureIn, ctx: ToolContext) -> ToolRe
     if not result.ok:
         return {"ok": False, "errors": result.errors}
 
+    # everything that can fail comes before the first change to the workspace: a failure after
+    # the tab was created made the model retry and open the same edit again and again
+    before = await run_in_threadpool(compute_light, parent or "")
+    after = await run_in_threadpool(compute_light, args.new_smiles)
+    # both sides keep the user's layout, so the change is easy to spot
+    svg_before = await run_in_threadpool(depict_molblock, result.parent_molblock or "")
+    svg_after = await run_in_threadpool(depict_molblock, result.molblock or "", 280, 200, tuple(result.changed_atoms))
+
     active_smiles = {_canon(s) for s in active.get("smiles", [])}
     on_active_tab = result.parent_smiles in active_smiles
     session = ctx.session
@@ -134,11 +142,6 @@ async def edit_structure_tool(args: EditStructureIn, ctx: ToolContext) -> ToolRe
                 "tab.replace_rejected", {"tab_id": active.get("id"), "reason": note, "fallback_tab_id": tab.id}
             )
 
-    before = await run_in_threadpool(compute_light, args.parent_smiles)
-    after = await run_in_threadpool(compute_light, args.new_smiles)
-    # both sides keep the user's layout, so the change is easy to spot
-    svg_before = await run_in_threadpool(depict_molblock, result.parent_molblock or "")
-    svg_after = await run_in_threadpool(depict_molblock, result.molblock or "", 280, 200, tuple(result.changed_atoms))
     await ctx.emit_artifact(
         "diff",
         {
