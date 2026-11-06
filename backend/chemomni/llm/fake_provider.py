@@ -52,6 +52,8 @@ class FakeProvider:
             result = json.loads(last["content"])
             if not result.get("ok"):
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "searched" in result:
+                return [{"text": f"{result['matches']} of {result['searched']} structure(s) contain the query."}]
             if "selected" in result and "accepted" in result:
                 return [{"text": f"Scanned {result['selected']}: {len(result['accepted'])} variant(s)."}]
             if "accepted" in result:
@@ -84,6 +86,9 @@ class FakeProvider:
             return [{"text": "Draw a structure on the active tab first, then ask again."}]
         smiles = [line[2:].strip() for line in match.group(1).strip().splitlines()]
         text = str(last.get("content", "")).lower()
+        ref = re.search(r"(?:compound|化合物)\s*(\d+[a-z]?)", text)
+        if ref and ("substructure" in text or "部分構造" in text):  # the numbered drawing is the query
+            return [{"tool": "substructure_search", "args": {"query_ref": ref.group(1)}}]
         if "methyl" in text and "fluor" in text:  # both, on different atoms
             changes = [{"operation": "substitute", "group": "F"}, {"operation": "substitute", "group": "C"}]
             return [{"tool": "scan_positions", "args": {"changes": changes, "title": "F + Me scan"}}]

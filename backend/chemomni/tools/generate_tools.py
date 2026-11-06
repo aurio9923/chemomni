@@ -15,6 +15,7 @@ from chemomni.chem.names import NameResolver
 from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.chem.scan import Change, scan, target_from_selection, target_from_smarts
 from chemomni.models import TabRead
+from chemomni.tools.refs import smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 GRID_CARD = (220, 160)
@@ -197,6 +198,9 @@ class ScanIn(BaseModel):
         "Needs parent_smiles if the active tab holds several molecules.",
     )
     parent_smiles: str | None = Field(None, description="Only with smarts: the molecule to search.")
+    parent_ref: str | None = Field(
+        None, description="Only with smarts: number of the compound in the editor to search (see <compounds>)."
+    )
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'F + Me scan'.")
 
 
@@ -230,7 +234,13 @@ async def scan_positions_tool(args: ScanIn, ctx: ToolContext) -> ToolResult:
             return {"ok": False, "errors": ["the editor content is not available; name the part with smarts"]}
         target, err = await run_in_threadpool(target_from_selection, molfile, args.atoms or selection)
     elif args.smarts:
-        parent = args.parent_smiles or _single_molecule(active)
+        parent = args.parent_smiles
+        if args.parent_ref:
+            compound, err = smiles_for(ctx, args.parent_ref)
+            if compound is None or compound.smiles is None:
+                return {"ok": False, "errors": [err or f"unknown compound {args.parent_ref}"]}
+            parent = compound.smiles
+        parent = parent or _single_molecule(active)
         if parent is None:
             return {"ok": False, "errors": ["the active tab holds several molecules; pass parent_smiles"]}
         target, err = await run_in_threadpool(target_from_smarts, parent, args.smarts)

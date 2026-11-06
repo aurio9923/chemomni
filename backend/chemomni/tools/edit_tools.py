@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
 
 from chemomni.api.tabs import create_tab
@@ -12,6 +12,7 @@ from chemomni.chem.depict import depict_molblock
 from chemomni.chem.edit import EditResult, edit
 from chemomni.chem.props import canonical_smiles, compute_light, parse_smiles
 from chemomni.models import Tab, TabRead, utcnow
+from chemomni.tools.refs import smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 
@@ -28,7 +29,12 @@ def _tab_payload(tab: Tab) -> dict[str, Any]:
 
 
 class EditStructureIn(BaseModel):
-    parent_smiles: str = Field(..., description="The molecule being edited, as it appears on the active tab.")
+    parent_smiles: str | None = Field(
+        None, description="The molecule being edited, as it appears on the active tab. Or use parent_ref."
+    )
+    parent_ref: str | None = Field(
+        None, description="Number of the compound being edited in the editor (see <compounds>), instead of SMILES."
+    )
     new_smiles: str = Field(..., description="The complete edited molecule (whole SMILES, not a fragment).")
     description: str = Field(..., max_length=80, description="Short title of the change, e.g. '4-F aspirin'.")
     target: Literal["new_tab", "replace_active"] = Field(
@@ -36,6 +42,12 @@ class EditStructureIn(BaseModel):
         description="new_tab (default) keeps the original. Use replace_active only if the user asked to replace "
         "or overwrite the structure on the active tab.",
     )
+
+    @model_validator(mode="after")
+    def _one_parent(self) -> EditStructureIn:
+        if bool(self.parent_smiles) == bool(self.parent_ref):
+            raise ValueError("give exactly one of parent_smiles and parent_ref")
+        return self
 
 
 def _summary_edit(r: ToolResult) -> str:
@@ -57,7 +69,13 @@ def _summary_edit(r: ToolResult) -> str:
 )
 async def edit_structure_tool(args: EditStructureIn, ctx: ToolContext) -> ToolResult:
     active = ctx.snapshot.get("active_tab") or {}
-    result: EditResult = await run_in_threadpool(edit, args.parent_smiles, args.new_smiles, active.get("molfile"))
+    parent = args.parent_smiles
+    if args.parent_ref:
+        compound, err = smiles_for(ctx, args.parent_ref)
+        if compound is None or compound.smiles is None:
+            return {"ok": False, "errors": [err or f"unknown compound {args.parent_ref}"]}
+        parent = compound.smiles
+    result: EditResult = await run_in_threadpool(edit, parent or "", args.new_smiles, active.get("molfile"))
     if not result.ok:
         return {"ok": False, "errors": result.errors}
 
