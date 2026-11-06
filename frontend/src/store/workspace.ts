@@ -23,6 +23,8 @@ interface WorkspaceState {
   closeTab: (id: string) => Promise<void>
   restoreLastClosed: () => Promise<void>
   duplicateTab: (id: string) => Promise<void>
+  /** One new tab per molecule; the original tab stays. */
+  splitTab: (id: string) => Promise<void>
   renameTab: (id: string, name: string) => Promise<void>
   openStructures: (name: string, items: { molfile: string | null; smiles: string }[]) => Promise<void>
   setConversation: (id: string) => void
@@ -139,6 +141,22 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
       const tab = await api.duplicateTab(id)
       set((s) => ({ tabs: [...s.tabs, tab] }))
       await get().activate(tab.id)
+    },
+
+    splitTab: async (id) => {
+      const active = id === get().activeTabId
+      if (active) await get().flush()
+      // the active tab may hold unsaved KET; the editor's molfile is the source of truth
+      const molfile = active ? await ketcher.getMolfileV3000() : null
+      try {
+        const created = await api.splitTab(id, molfile)
+        set((s) => ({ tabs: [...s.tabs, ...created] }))
+        await get().activate(created[0].id)
+        useToast.getState().show(`Split into ${created.length} tabs.`)
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 400) useToast.getState().show('This tab holds a single molecule.')
+        else throw e
+      }
     },
 
     renameTab: async (id, name) => {

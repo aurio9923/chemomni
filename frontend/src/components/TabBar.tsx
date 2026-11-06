@@ -1,10 +1,10 @@
-import { Copy, History, Plus, Sparkles, X } from 'lucide-react'
+import { Copy, History, Plus, Sparkles, Split, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { useWorkspace } from '../store/workspace'
 
 export function TabBar() {
-  const { tabs, activeTabId, activate, newTab, closeTab, duplicateTab, renameTab, restoreLastClosed, saving } =
+  const { tabs, activeTabId, activate, newTab, closeTab, duplicateTab, splitTab, renameTab, restoreLastClosed, saving } =
     useWorkspace()
   const [editing, setEditing] = useState<string | null>(null)
 
@@ -50,11 +50,25 @@ export function TabBar() {
                   {tab.name}
                 </span>
               )}
+              {tab.smiles_cache.length > 1 && (
+                <button
+                  type="button"
+                  aria-label={`Split ${tab.name} into one tab per molecule`}
+                  title="Split into one tab per molecule"
+                  className="ml-auto hidden rounded p-0.5 text-muted group-hover:block hover:bg-line hover:text-ink"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void splitTab(tab.id)
+                  }}
+                >
+                  <Split className="size-3" />
+                </button>
+              )}
               <button
                 type="button"
                 aria-label={`Duplicate ${tab.name}`}
                 title="Duplicate"
-                className="ml-auto hidden rounded p-0.5 text-muted group-hover:block hover:bg-line hover:text-ink"
+                className={`${tab.smiles_cache.length > 1 ? '' : 'ml-auto '}hidden rounded p-0.5 text-muted group-hover:block hover:bg-line hover:text-ink`}
                 onClick={(e) => {
                   e.stopPropagation()
                   void duplicateTab(tab.id)
