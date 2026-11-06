@@ -338,13 +338,22 @@ def main() -> None:
 
         assert ket_labels() == []
         page.get_by_role("button", name="Number compounds").click()
-        page.wait_for_function(
-            "async () => JSON.parse(await window.chemomniKetcher.getKet()).root.nodes.filter((n) => n.type === 'text').length === 3",
-            polling=200,
-            timeout=5_000,
+        # sample the editor until the numbers have been there for a moment (or give up after 8 s)
+        series = page.evaluate(
+            """async () => {
+                const out = []
+                const t0 = performance.now()
+                while (performance.now() - t0 < 8000) {
+                    const ket = JSON.parse(await window.chemomniKetcher.getKet())
+                    out.push(`${ket.root.nodes.filter((n) => n.type === 'text').length}/${ket.root.nodes.filter((n) => n.$ref).length}`)
+                    if (out.slice(-5).filter((x) => x === '3/3').length === 5) break
+                    await new Promise((r) => setTimeout(r, 150))
+                }
+                return out
+            }"""
         )
         labels = ket_labels()
-        assert sorted(labels) == ["1", "2", "3"], (labels, editor_smiles())
+        assert sorted(labels) == ["1", "2", "3"], (labels, series, editor_smiles(), errors)
         expect(page.get_by_text("Numbered 3 structures: 1, 2, 3.")).to_be_visible()
         assert editor_components() == 3  # the numbers are text objects, not molecules
         page.get_by_role("button", name="Number compounds").click()  # nothing left to number
