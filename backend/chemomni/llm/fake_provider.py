@@ -84,11 +84,14 @@ class FakeProvider:
             return [{"text": "Draw a structure on the active tab first, then ask again."}]
         smiles = [line[2:].strip() for line in match.group(1).strip().splitlines()]
         text = str(last.get("content", "")).lower()
+        if "methyl" in text and "fluor" in text:  # both, on different atoms
+            changes = [{"operation": "substitute", "group": "F"}, {"operation": "substitute", "group": "C"}]
+            return [{"tool": "scan_positions", "args": {"changes": changes, "title": "F + Me scan"}}]
         if "pyridine" in text:
-            args = {"operation": "replace_atom", "element": "N", "title": "Pyridine scan"}
+            args = {"changes": [{"operation": "replace_atom", "element": "N"}], "title": "Pyridine scan"}
             return [{"tool": "scan_positions", "args": args}]
         if "fluor" in text:
-            args = {"operation": "substitute", "group": "F", "title": "Fluoro scan"}
+            args = {"changes": [{"operation": "substitute", "group": "F"}], "title": "Fluoro scan"}
             return [{"tool": "scan_positions", "args": args}]
         if "analog" in text:
             parent = smiles[0]

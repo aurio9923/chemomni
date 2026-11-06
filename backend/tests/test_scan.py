@@ -5,7 +5,7 @@ import pytest
 from rdkit import Chem
 from rdkit.Chem import rdDepictor
 
-from chemomni.chem.scan import scan, target_from_selection, target_from_smarts
+from chemomni.chem.scan import Change, scan, target_from_selection, target_from_smarts
 from tests.test_chat import chat
 
 ACETANILIDE = "CC(=O)Nc1ccccc1"
@@ -31,7 +31,7 @@ def _scan(smiles: str, operation: str, **kwargs):  # type: ignore[no-untyped-def
     molfile, mol = _drawn(smiles)
     target, err = target_from_selection(molfile, _ring_numbers(mol))
     assert target is not None, err
-    return scan(target, operation, **kwargs)  # type: ignore[arg-type]
+    return scan(target, [Change(operation, **kwargs)])  # type: ignore[arg-type]
 
 
 def _canon(*smiles: str) -> set[str]:
@@ -73,7 +73,7 @@ def test_substituted_ring_lists_each_free_position_by_atom_number() -> None:
 def test_selected_side_chain_atoms_and_groups() -> None:
     molfile, _ = _drawn("CCCc1ccccc1")
     target, _ = target_from_selection(molfile, [1, 2, 3])
-    r = scan(target, "substitute", group="OC")  # type: ignore[arg-type]
+    r = scan(target, [Change("substitute", group="OC")])  # type: ignore[arg-type]
     assert {s for s, _ in r.candidates} == _canon("COCCCc1ccccc1", "CC(OC)Cc1ccccc1", "CCC(OC)c1ccccc1")
 
 
@@ -87,9 +87,9 @@ def test_errors_are_actionable() -> None:
     molfile, mol = _drawn(ACETANILIDE)
     ring = _ring_numbers(mol)
     target, _ = target_from_selection(molfile, ring)
-    assert scan(target, "substitute", group="F.F").errors == ["a group must be one connected fragment"]  # type: ignore[arg-type]
-    assert scan(target, "substitute", group="C1CC").errors[0].startswith("group:")  # type: ignore[arg-type]
-    assert "already N" in scan(_pyridine_target(), "replace_atom", element="N").errors[0]
+    assert scan(target, [Change("substitute", group="F.F")]).errors == ["a group must be one connected fragment"]  # type: ignore[arg-type]
+    assert scan(target, [Change("substitute", group="C1CC")]).errors[0].startswith("group:")  # type: ignore[arg-type]
+    assert "already N" in scan(_pyridine_target(), [Change("replace_atom", element="N")]).errors[0]
 
 
 def test_too_many_variants_are_refused(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -124,7 +124,7 @@ def test_numbers_follow_the_molfile_even_with_explicit_hydrogens() -> None:
     ring = [a.GetIdx() + 1 for a in shifted.GetAtoms() if a.GetIsAromatic()]
     target, err = target_from_selection(_molblock(shifted), ring)
     assert target is not None, err
-    r = scan(target, "replace_atom", element="N")
+    r = scan(target, [Change("replace_atom", element="N")])
     assert {s for s, _ in r.candidates} == _canon("Cc1ccccn1", "Cc1cccnc1", "Cc1ccncc1")
     assert r.parent_smiles == "Cc1ccccc1"
 
@@ -132,7 +132,7 @@ def test_numbers_follow_the_molfile_even_with_explicit_hydrogens() -> None:
 def test_smarts_mode() -> None:
     target, err = target_from_smarts("c1ccccc1CC(=O)Nc1ccccc1", "c1ccccc1")
     assert target is not None, err
-    r = scan(target, "replace_atom", element="N")
+    r = scan(target, [Change("replace_atom", element="N")])
     assert r.ok and len(r.candidates) == 6  # two phenyls, three positions each (not merged across rings)
     assert target_from_smarts("CCO", "c1ccccc1")[1] == "the pattern c1ccccc1 does not occur in the molecule"
     assert target_from_smarts("CCO", "[")[1] == "invalid SMARTS: ["
@@ -190,3 +190,96 @@ async def test_nothing_selected_asks_the_user(client: httpx.AsyncClient) -> None
     assert not any(n == "tab.create" for n, _ in events)
     result = next(d for n, d in events if n == "tool.result")
     assert result["ok"] is False and "select the part" in result["summary"]
+
+
+# ---------------------------------------------------------------- several changes at once (reported from real use)
+
+METHYL_BENZOATE = "COC(=O)c1ccccc1"
+
+
+def _benzoate(*subs: str | None) -> str:
+    """Methyl benzoate with a substituent (or None) on each of ring positions 2..6, built by hand."""
+    parts = ["COC(=O)c1"]
+    for i, sub in enumerate(subs):
+        parts.append("c" + ("1" if i == len(subs) - 1 else "") + (f"({sub})" if sub else ""))
+    return "".join(parts)
+
+
+def _brute_force(first: str, second: str) -> set[str]:
+    """Every placement of two different groups on the five CH positions, by plain loops (no symmetry logic)."""
+    found = set()
+    for a in range(5):
+        for b in range(5):
+            if a == b:
+                continue
+            subs: list[str | None] = [None] * 5
+            subs[a], subs[b] = first, second
+            found.add(Chem.CanonSmiles(_benzoate(*subs)))
+    return found
+
+
+def test_fluoro_plus_methyl_on_a_phenyl_misses_nothing() -> None:
+    molfile, mol = _drawn(METHYL_BENZOATE)
+    target, _ = target_from_selection(molfile, _ring_numbers(mol))
+    r = scan(target, [Change("substitute", group="F"), Change("substitute", group="C")])  # type: ignore[arg-type]
+    expected = _brute_force("F", "C")
+    assert len(expected) == 10  # 5 x 4 placements, folded in pairs by the ring's mirror symmetry
+    assert r.ok and {s for s, _ in r.candidates} == expected
+    assert len(r.candidates) == 10 and r.tried == 20 and r.merged == 10
+    # the two that were once missing: F meta / Me para-to-F, and F para / Me ortho
+    assert Chem.CanonSmiles("COC(=O)c1cc(F)ccc1C") in expected and Chem.CanonSmiles("COC(=O)c1ccc(F)cc1C") in expected
+    notes = [n for _, n in r.candidates]
+    assert all(n.count(" at ") == 2 and ("F at" in n and "Me at" in n) for n in notes), notes
+    assert any("(+1 equivalent)" in n for n in notes)
+
+
+def test_difluoro_counts_each_placement_once() -> None:
+    molfile, mol = _drawn(METHYL_BENZOATE)
+    target, _ = target_from_selection(molfile, _ring_numbers(mol))
+    r = scan(target, [Change("substitute", group="F"), Change("substitute", group="F")])  # type: ignore[arg-type]
+    brute = set()
+    for a in range(5):
+        for b in range(a + 1, 5):
+            subs: list[str | None] = [None] * 5
+            subs[a] = subs[b] = "F"
+            brute.add(Chem.CanonSmiles(_benzoate(*subs)))
+    assert len(brute) == 6
+    assert {s for s, _ in r.candidates} == brute
+    assert r.tried == 10  # unordered pairs: identical changes are not tried in both orders
+
+
+def test_three_changes_and_mixed_operations() -> None:
+    molfile, mol = _drawn(METHYL_BENZOATE)
+    target, _ = target_from_selection(molfile, _ring_numbers(mol))
+    # a pyridine nitrogen and a fluorine on different atoms; the ester-bearing carbon is never a site
+    r = scan(target, [Change("replace_atom", element="N"), Change("substitute", group="F")])  # type: ignore[arg-type]
+    assert r.ok
+    for smiles, _ in r.candidates:
+        mol_ = Chem.MolFromSmiles(smiles)
+        assert mol_.HasSubstructMatch(Chem.MolFromSmarts("n")) and mol_.HasSubstructMatch(Chem.MolFromSmarts("F"))
+        assert Chem.rdMolDescriptors.CalcMolFormula(mol_) == "C7H6FNO2"
+
+
+def test_more_changes_than_atoms_and_too_many_placements(monkeypatch: pytest.MonkeyPatch) -> None:
+    molfile, _ = _drawn("CCO")
+    target, _ = target_from_selection(molfile, [3])  # the hydroxyl: one atom with one H
+    r = scan(target, [Change("substitute", group="F"), Change("substitute", group="C")])  # type: ignore[arg-type]
+    assert not r.ok and r.errors == ["2 changes need 2 different atoms, but only 1 can take one"]
+    monkeypatch.setattr("chemomni.chem.scan.MAX_COMBINATIONS", 10)
+    molfile, mol = _drawn(METHYL_BENZOATE)
+    target, _ = target_from_selection(molfile, _ring_numbers(mol))
+    r = scan(target, [Change("substitute", group="F"), Change("substitute", group="C")])  # type: ignore[arg-type]
+    assert not r.ok and "25 placements to try" in r.errors[0]
+
+
+async def test_fluoro_plus_methyl_through_the_chat_loop(client: httpx.AsyncClient) -> None:
+    tab, conv = await _tab(client), (await client.get("/api/workspace")).json()["conversation_id"]
+    events = await chat(
+        client, conv, "monofluorinate and monomethylate the phenyl", _snapshot(tab, METHYL_BENZOATE, None)
+    )
+    created = next(d for n, d in events if n == "tab.create")
+    assert created["tab"]["name"] == "F + Me scan"
+    assert set(created["tab"]["smiles_cache"]) == _brute_force("F", "C")
+    art = next(d["artifact"] for n, d in events if n == "artifact")["payload"]
+    assert len(art["items"]) == 10 and art["rejected"] == []
+    assert next(d for n, d in events if n == "tool.result")["summary"] == "10 variant(s) of c1ccccc1"

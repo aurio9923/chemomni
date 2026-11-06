@@ -13,7 +13,7 @@ from chemomni.chem.generate import Evaluation, evaluate
 from chemomni.chem.layout import layout_smiles
 from chemomni.chem.names import NameResolver
 from chemomni.chem.props import canonical_smiles, parse_smiles
-from chemomni.chem.scan import scan, target_from_selection, target_from_smarts
+from chemomni.chem.scan import Change, scan, target_from_selection, target_from_smarts
 from chemomni.models import TabRead
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
@@ -155,19 +155,37 @@ async def present_candidates(
 # ---------------------------------------------------------------- scan_positions
 
 
-class ScanIn(BaseModel):
+class ChangeIn(BaseModel):
     operation: Literal["substitute", "replace_atom"] = Field(
         ...,
-        description="substitute: replace one hydrogen by `group` at every possible position (mono-fluorination, "
-        "methylation, ...). replace_atom: change one atom to `element` at every possible position "
-        "(phenyl -> pyridine is element N, thiophene from benzene is S, ...).",
+        description="substitute: replace one hydrogen by `group`. replace_atom: change one atom to `element` "
+        "(phenyl -> pyridine is element N).",
     )
     group: str | None = Field(
         None,
         description="For substitute: the substituent as SMILES; its first atom attaches. "
-        "F, Cl, C, OC, N, O, C#N, C(F)(F)F, C(=O)O, [N+](=O)[O-].",
+        "F, Cl, C (methyl), CC, OC, N, O, C#N, C(F)(F)F, C(=O)O, [N+](=O)[O-].",
     )
     element: Literal["N", "O", "S", "C"] | None = Field(None, description="For replace_atom: the new element.")
+
+    @model_validator(mode="after")
+    def _arguments(self) -> ChangeIn:
+        if self.operation == "substitute" and not self.group:
+            raise ValueError("group is required for substitute")
+        if self.operation == "replace_atom" and not self.element:
+            raise ValueError("element is required for replace_atom")
+        return self
+
+
+class ScanIn(BaseModel):
+    changes: list[ChangeIn] = Field(
+        ...,
+        min_length=1,
+        max_length=3,
+        description="The changes to make together. One entry: that change at every position. Several entries: "
+        "every way of giving each change its own atom, e.g. [F, methyl] = one fluorine and one methyl on "
+        "different atoms in all combinations; [F, F] = difluoro. Several changes belong in ONE call.",
+    )
     atoms: list[int] | None = Field(
         None,
         max_length=200,
@@ -179,15 +197,7 @@ class ScanIn(BaseModel):
         "Needs parent_smiles if the active tab holds several molecules.",
     )
     parent_smiles: str | None = Field(None, description="Only with smarts: the molecule to search.")
-    title: str = Field(..., max_length=60, description="Short tab name, e.g. 'Pyridine scan'.")
-
-    @model_validator(mode="after")
-    def _operation_arguments(self) -> ScanIn:
-        if self.operation == "substitute" and not self.group:
-            raise ValueError("group is required for substitute")
-        if self.operation == "replace_atom" and not self.element:
-            raise ValueError("element is required for replace_atom")
-        return self
+    title: str = Field(..., max_length=60, description="Short tab name, e.g. 'F + Me scan'.")
 
 
 def _summary_scan(r: ToolResult) -> str:
@@ -199,13 +209,15 @@ def _summary_scan(r: ToolResult) -> str:
 @tool(
     name="scan_positions",
     description=(
-        "Try one simple change at every possible position of part of a molecule and show all variants "
-        "at once: the part the user selected in the editor (a phenyl, a ring, a side chain), or a part you "
-        "name with SMARTS. Use it for requests like 'make this phenyl a pyridine' (replace_atom N), "
-        "'monofluorinate this ring' or 'try methyl, chloro and fluoro here' (substitute; call once per group). "
-        "Positions that are the same by symmetry are merged, and ortho/meta/para is named for a ring with "
-        "one attachment point. Do not enumerate positions yourself and do not use it when the user wants "
-        "one specific position (use edit_structure). If nothing is selected, ask the user to select the part."
+        "Try simple changes at every possible position of part of a molecule and show all variants at once: "
+        "the part the user selected in the editor (a phenyl, a ring, a side chain), or a part you name with "
+        "SMARTS. 'Make this phenyl a pyridine' is one change (replace_atom N); 'monofluorinate' is one change "
+        "(substitute F); 'difluorinate' is two (F, F); 'one fluorine and one methyl' is two (F, C). Put "
+        "changes made together in one call, in `changes`; for alternatives ('try methyl, chloro and fluoro "
+        "here') call once per alternative. Positions that are the same by symmetry are merged, and "
+        "ortho/meta/para is named for a ring with one attachment point. Never enumerate positions or "
+        "combinations yourself, and do not use it when the user wants one specific position (use "
+        "edit_structure). If nothing is selected, ask the user to select the part."
     ),
     summary=_summary_scan,
 )
@@ -230,7 +242,8 @@ async def scan_positions_tool(args: ScanIn, ctx: ToolContext) -> ToolResult:
     if target is None:
         return {"ok": False, "errors": [err or "could not find the atoms"]}
 
-    scanned = await run_in_threadpool(scan, target, args.operation, group=args.group, element=args.element)
+    changes = [Change(c.operation, c.group, c.element) for c in args.changes]
+    scanned = await run_in_threadpool(scan, target, changes)
     if not scanned.ok:
         return {"ok": False, "errors": scanned.errors, "selected": scanned.selected_smiles}
     result = await present_candidates(
@@ -240,11 +253,12 @@ async def scan_positions_tool(args: ScanIn, ctx: ToolContext) -> ToolResult:
         scanned.candidates,
         molfile=molfile,
         skipped=scanned.skipped,
-        any_element=args.operation == "replace_atom",
+        any_element=any(c.operation == "replace_atom" for c in args.changes),
     )
     if result.get("ok"):
         result["selected"] = scanned.selected_smiles
-        result["equivalent_positions_merged"] = scanned.merged
+        result["placements_tried"] = scanned.tried
+        result["equivalent_placements_merged"] = scanned.merged
     return result
 
 
