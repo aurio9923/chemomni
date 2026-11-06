@@ -227,6 +227,40 @@ def main() -> None:
         )
         assert selected == [first_el], (selected, first_el)
 
+        # ---- M3: analog series on a grid tab, sortable table, split into one tab per molecule ----
+        def editor_components() -> int:
+            return len([s for s in editor_smiles().split(".") if s])
+
+        n_tabs = tabs.count()
+        send("suggest 5 analogs")  # fake: 5 valid + duplicate + parent + invalid
+        expect(tabs).to_have_count(n_tabs + 1)
+        active_tab = page.locator("[data-testid=tab][aria-selected=true]")
+        expect(active_tab).to_contain_text("Analogs")
+        grid = page.get_by_test_id("artifact-grid").last
+        expect(grid.get_by_test_id("grid-card")).to_have_count(5)
+        expect(grid).to_contain_text("3 rejected")
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 5", polling=200, timeout=5_000
+        )
+        # sort by MW, descending: the chloro analog (#5) is the heaviest
+        mw = grid.get_by_role("button", name="MW", exact=True)
+        mw.click()
+        mw.click()
+        expect(grid.locator("tbody tr").first.locator("td").first).to_have_text("5")
+        if len(sys.argv) > 3:
+            page.screenshot(path=sys.argv[3])
+
+        active_tab.hover()
+        active_tab.get_by_role("button", name="Split Analogs into one tab per molecule").click()
+        expect(tabs).to_have_count(n_tabs + 1 + 5)
+        expect(active_tab).to_contain_text("Analogs #1")
+        page.wait_for_function(
+            "async () => { const s = await window.chemomniBridge.getSmiles(); return s && !s.includes('.') }",
+            polling=200,
+            timeout=5_000,
+        )
+        assert editor_components() == 1
+
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
         browser.close()
