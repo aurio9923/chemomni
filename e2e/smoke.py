@@ -262,36 +262,39 @@ def main() -> None:
         assert editor_components() == 1
 
         # ---- select a phenyl in the editor, ask for a pyridine: every position at once ----
-        page.get_by_role("button", name="New tab", exact=True).click()
-        page.wait_for_timeout(300)
-        set_structure(page, "CC(=O)Nc1ccccc1")
-        expect(page.get_by_test_id("property-bar")).to_contain_text("C8H9NO", timeout=5_000)
-        page.wait_for_timeout(800)  # autosave
-        ring_size = page.evaluate(
-            """() => {
-                const k = window.chemomniKetcher
-                const adj = new Map()
-                k.editor.struct().bonds.forEach((b) => {
-                    for (const [x, y] of [[b.begin, b.end], [b.end, b.begin]]) {
-                        if (!adj.has(x)) adj.set(x, [])
-                        adj.get(x).push(y)
+        def draw_and_select_phenyl(smiles: str, formula: str) -> None:
+            page.get_by_role("button", name="New tab", exact=True).click()
+            page.wait_for_timeout(300)
+            set_structure(page, smiles)
+            expect(page.get_by_test_id("property-bar")).to_contain_text(formula, timeout=5_000)
+            page.wait_for_timeout(800)  # autosave
+            ring_size = page.evaluate(
+                """() => {
+                    const k = window.chemomniKetcher
+                    const adj = new Map()
+                    k.editor.struct().bonds.forEach((b) => {
+                        for (const [x, y] of [[b.begin, b.end], [b.end, b.begin]]) {
+                            if (!adj.has(x)) adj.set(x, [])
+                            adj.get(x).push(y)
+                        }
+                    })
+                    let ring = null
+                    const walk = (start, cur, path) => {
+                        if (ring) return
+                        if (path.length === 6) {
+                            if (adj.get(cur).includes(start)) ring = [...path]
+                            return
+                        }
+                        for (const n of adj.get(cur)) if (!path.includes(n)) walk(start, n, [...path, n])
                     }
-                })
-                let ring = null
-                const walk = (start, cur, path) => {
-                    if (ring) return
-                    if (path.length === 6) {
-                        if (adj.get(cur).includes(start)) ring = [...path]
-                        return
-                    }
-                    for (const n of adj.get(cur)) if (!path.includes(n)) walk(start, n, [...path, n])
-                }
-                adj.forEach((_, id) => walk(id, id, [id]))
-                k.editor.selection({ atoms: ring })
-                return ring ? ring.length : 0
-            }"""
-        )
-        assert ring_size == 6
+                    adj.forEach((_, id) => walk(id, id, [id]))
+                    k.editor.selection({ atoms: ring })
+                    return ring ? ring.length : 0
+                }"""
+            )
+            assert ring_size == 6
+
+        draw_and_select_phenyl("CC(=O)Nc1ccccc1", "C8H9NO")
         n_tabs = tabs.count()
         send("make the selected phenyl a pyridine")
         expect(tabs).to_have_count(n_tabs + 1)
@@ -305,6 +308,18 @@ def main() -> None:
         )
         if len(sys.argv) > 4:
             page.screenshot(path=sys.argv[4])
+
+        # one fluorine AND one methyl on the five CH of a phenyl: 20 placements, 10 distinct compounds
+        draw_and_select_phenyl("COC(=O)c1ccccc1", "C8H8O2")
+        n_tabs = tabs.count()
+        send("monofluorinate and monomethylate the selected phenyl")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(active_tab).to_contain_text("F + Me scan")
+        combo_grid = page.get_by_test_id("artifact-grid").last
+        expect(combo_grid.get_by_test_id("grid-card")).to_have_count(10)
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 10", polling=200, timeout=5_000
+        )
 
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors

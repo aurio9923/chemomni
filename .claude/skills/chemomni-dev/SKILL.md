@@ -191,8 +191,12 @@ async for chunk in stream:
   `layout_smiles`). `chem/generate.py` aligns every proposal to the parent's template and shifts all of
   them by the template's centre, so the shared core sits at the same spot of each grid cell. `align()`
   already returns the template's scale; rescaling its output again moves the core slightly.
-- Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the operation (`substitute` a
-  group for H, or `replace_atom` to an element); RDKit enumerates positions on the selected atoms
+- Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the changes (`substitute` a
+  group for H, or `replace_atom` to an element; `changes` takes up to three and they are combined: every
+  way of giving each change its own atom, identical changes not counted in both orders, results merged by
+  canonical SMILES). Combinations must never be written by the model: "F and Me on a phenyl" came out as
+  8 of 10 when it did (see `test_fluoro_plus_methyl_on_a_phenyl_misses_nothing`, whose expected set is
+  built by plain loops, not by `scan`). RDKit enumerates positions on the selected atoms
   (molfile numbers, mapped through an `_orig` atom property so removed explicit H cannot shift them),
   merges symmetric results and names ortho/meta/para for a ring with one attachment point. Substituted
   aromatic atoms (3 connections) are not positions for an element swap. For a swap the grid layout uses

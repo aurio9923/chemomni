@@ -9,7 +9,7 @@ A chemical structure workspace that puts a ChemDraw-like editor ([Ketcher](https
 - Editor tabs you create, rename, duplicate, close and reopen; autosaved to SQLite; a live property bar.
 - Chat about the active tab: properties (RDKit), validation, similarity, substructure search.
 - Edits in natural language (“add a fluorine para to the ester”), laid out on your own drawing, in a new tab or in place with Undo. Select atoms in the editor to point at them.
-- Part-of-molecule changes: select a substructure (say a phenyl) and ask for a pyridine or a mono-fluorination. Every position is enumerated with RDKit (not guessed by the model), symmetric positions are merged, ortho/meta/para is named, and all variants open on one grid tab.
+- Part-of-molecule changes: select a substructure (say a phenyl) and ask for a pyridine or a mono-fluorination. Several changes can be combined (one F and one methyl, difluoro). Every position and combination is enumerated with RDKit (not guessed by the model), symmetric ones are merged, ortho/meta/para is named, and all variants open on one grid tab.
 - Proposals: the AI designs candidates, RDKit validates and deduplicates them, and they open together on one grid tab aligned to the parent, with a sortable table of properties and similarity. Split any multi-molecule tab into one tab per molecule.
 - Names to structures: OPSIN offline when installed, then PubChem.
 - Models: OpenAI (Responses API), Anthropic Claude, or any OpenAI-compatible server (Ollama, vLLM), switchable from the chat header.
