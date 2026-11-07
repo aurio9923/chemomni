@@ -186,6 +186,42 @@ def test_a_salt_is_not_guessed_at() -> None:
     assert target is None and err is not None and "several components" in err
 
 
+def test_a_p_halophenyl_never_becomes_a_bridgehead_halide() -> None:
+    """User decision of 2026-11-08: the cage rules do not take a halogen as an attachment atom."""
+    anilide = "Cc1ccc(C(=O)Nc2ccc(Cl)cc2)cc1"  # only the tolyl ring can be replaced
+    expected = {
+        "para_phenylene_to_bcp": "CC12CC(C1)(C2)C(=O)Nc1ccc(Cl)cc1",
+        "para_phenylene_to_bco": "CC12CCC(CC1)(CC2)C(=O)Nc1ccc(Cl)cc1",
+    }
+    for rule_id, product in expected.items():
+        found = products(rule_id, anilide)
+        assert [Chem.CanonSmiles(c.smiles) for c in found] == [Chem.CanonSmiles(product)], rule_id
+        assert _matches(rule_id, "Cc1ccc(F)cc1").positions == 0, rule_id  # a halogen on the far side: no fit
+
+
+def test_a_halothiophene_is_still_offered_for_a_p_halophenyl() -> None:
+    """Not covered by the restriction on purpose: 5-chlorothiophene is a common motif (PLAN Q62)."""
+    found = products("para_phenylene_to_thiophenediyl", "Cc1ccc(Cl)cc1")
+    assert [Chem.CanonSmiles(c.smiles) for c in found] == [Chem.CanonSmiles("Cc1ccc(Cl)s1")]
+
+
+@pytest.mark.parametrize("drawn", ["Cc1cc(-c2ccccc2)[nH]n1", "Cc1cc(-c2ccccc2)n[nH]1"])
+def test_pyrazole_gives_both_isoxazole_regioisomers_whichever_tautomer_is_drawn(drawn: str) -> None:
+    """User decision of 2026-11-08. Written by hand: 3-methyl-5-phenyl and 5-methyl-3-phenyl isoxazole."""
+    found = products("pyrazole_to_isoxazole", drawn)
+    assert {Chem.CanonSmiles(c.smiles) for c in found} == {
+        Chem.CanonSmiles("Cc1cc(-c2ccccc2)on1"),
+        Chem.CanonSmiles("Cc1cc(-c2ccccc2)no1"),
+    }
+    assert sorted(c.rationale.split(" (")[1] for c in found) == ["1 of 2)", "2 of 2)"]
+
+
+def test_pyrazole_edge_cases() -> None:
+    assert [c.smiles for c in products("pyrazole_to_isoxazole", "Cc1cc(C)[nH]n1")] == [Chem.CanonSmiles("Cc1cc(C)no1")]
+    assert _matches("pyrazole_to_isoxazole", "Cc1cc(-c2ccccc2)n(C)n1").positions == 0  # N-substituted: no fit
+    assert _matches("pyrazole_to_isoxazole", "Cc1cc(-c2ccccc2)on1").positions == 0  # already an isoxazole
+
+
 def test_a_rule_that_fits_nothing_says_how_to_find_one() -> None:
     result = bio.apply(_target("c1ccccc1O"), [_rule("cooh_to_tetrazole")])
     assert not result.ok and "find_bioisosteres" in result.errors[0]

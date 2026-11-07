@@ -180,7 +180,10 @@
   names:
     en: ["3,5-disubstituted 1H-pyrazole -> 3,5-disubstituted isoxazole"]
     ja: ["ピラゾール -> イソキサゾール"]
-  reaction: "[*:1][cR1]1[cH1R1][cR1]([*:2])[nH1R1][nR1]1>>[*:1]c1cc([*:2])no1"
+  # 2026-11-08 (user decision): both regioisomers are produced whichever N-H tautomer is drawn. The two ring
+  # nitrogens are written as "N-H or pyridine-type" (an N-substituted pyrazole still does not match), so the
+  # template fits the ring in both directions.
+  reaction: "[*:1][cR1]1[cH1R1][cR1]([*:2])[nR1;H1,X2][nR1;H1,X2]1>>[*:1]c1cc([*:2])no1"
   attachments: 2
   class: ring_replacement
   context: "無置換窒素を持つピラゾール環をイソキサゾール環に置き換える。水素結合供与体を除いて膜透過性や経口吸収性を改善する"
@@ -211,16 +214,30 @@
   tests:
     positive:
       - parent: "Cc1cc([nH]n1)-c1ccc(cc1)S(N)(=O)=O"
-        products: ["Cc1cc(-c2ccc(S(N)(=O)=O)cc2)no1"]
-        note: "ピラゾール型スルホンアミドからバルデコキシブ型イソキサゾール骨格への変換"
+        products:
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)no1"
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)on1"
+        note: "ピラゾール型スルホンアミド。位置異性体のイソキサゾールが両方出る（前者がバルデコキシブ型の骨格）"
+      - parent: "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)n[nH]1"
+        products:
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)no1"
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)on1"
+        note: "同じピラゾールを N-H の位置を変えて描いたもの。互変異性体の描き方に依らず同じ 2 種が出る"
+      - parent: "Cc1cc(C)[nH]n1"
+        products: ["Cc1cc(C)no1"]
+        note: "対称なピラゾール（二つの位置異性体が同じ分子になり 1 種にまとまる）"
       - parent: "Cc1cc([nH]n1)-c1ccc(cc1)-c1cc(C)[nH]n1"
         products:
           - "Cc1cc(-c2ccc(-c3cc(C)[nH]n3)cc2)on1"
+          - "Cc1cc(-c2ccc(-c3cc(C)[nH]n3)cc2)no1"
           - "Cc1cc(-c2ccc(-c3cc(C)on3)cc2)[nH]n1"
-        note: "ビスピラゾリルベンゼン（二箇所のピラゾール環）"
+          - "Cc1cc(-c2ccc(-c3cc(C)no3)cc2)[nH]n1"
+        note: "ビスピラゾリルベンゼン（二箇所のピラゾール環、それぞれ位置異性体が 2 種）"
     negative:
       - parent: "Cc1ccc(cc1)-n1nc(cc1-c1ccc(cc1)S(N)(=O)=O)C(F)(F)F"
         note: "セレコキシブ（窒素が置換された三置換ピラゾール）"
+      - parent: "Cc1cc(-c2ccccc2)n(C)n1"
+        note: "N-メチルピラゾール（窒素が置換されているので対象外）"
 
 - id: isoxazole_to_pyrazole
   family: heteroaryl_switches

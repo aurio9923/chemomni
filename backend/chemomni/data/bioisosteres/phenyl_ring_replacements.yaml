@@ -267,7 +267,9 @@
   names:
     en: ["1,4-phenylene -> bicyclo[1.1.1]pentane-1,3-diyl", "para-phenyl -> BCP"]
     ja: ["パラフェニレン -> ビシクロペンタンジイル"]
-  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([*:2])[cH1R1][cH1R1]1>>[*:1]C12CC(C1)(C2)[*:2]"
+  # 2026-11-08 (user decision): the attachment atoms may not be halogens, so a p-halophenyl never becomes a
+  # bridgehead halide (1-halo-bicyclo[1.1.1]pentane). The same restriction is made in para_phenylene_to_bco.
+  reaction: "[*;!#9;!#17;!#35;!#53:1][cR1]1[cH1R1][cH1R1][cR1]([*;!#9;!#17;!#35;!#53:2])[cH1R1][cH1R1]1>>[*:1]C12CC(C1)(C2)[*:2]"
   attachments: 2
   class: nonclassical
   context: "パラ二置換ベンゼン環をビシクロペンタン骨格に置き換える。直線的な置換基の向きを保ちながら芳香環を飽和多環に換える"
@@ -304,20 +306,22 @@
         products:
           - "Cc1ccc(NC(=O)C23CC(C(=O)Nc4ccc(F)cc4)(C2)C3)cc1"
           - "CC12CC(NC(=O)c3ccc(C(=O)Nc4ccc(F)cc4)cc3)(C1)C2"
-          - "Cc1ccc(NC(=O)c2ccc(C(=O)NC34CC(F)(C3)C4)cc2)cc1"
-        note: "三箇所のパラフェニレンを持つジアミド誘導体"
+        note: "三箇所のパラフェニレンを持つジアミド誘導体（p-フルオロフェニル環は対象外）"
     negative:
       - parent: "O=C(c1ccccc1)c1cccc(C(C)C(=O)O)c1"
         note: "ケトプロフェン（一置換およびメタ二置換ベンゼン）"
       - parent: "CC(=O)Oc1ccccc1C(=O)O"
         note: "アスピリン（オルト二置換ベンゼン）"
+      - parent: "Cc1ccc(F)cc1"
+        note: "p-フルオロトルエン（接続点がハロゲン）"
 
 - id: para_phenylene_to_bco
   family: phenyl_ring_replacements
   names:
     en: ["1,4-phenylene -> bicyclo[2.2.2]octane-1,4-diyl", "para-phenyl -> BCO"]
     ja: ["パラフェニレン -> ビシクロオクタンジイル"]
-  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([*:2])[cH1R1][cH1R1]1>>[*:1]C12CCC(CC1)(CC2)[*:2]"
+  # 2026-11-08 (user decision): the attachment atoms may not be halogens (see para_phenylene_to_bcp).
+  reaction: "[*;!#9;!#17;!#35;!#53:1][cR1]1[cH1R1][cH1R1][cR1]([*;!#9;!#17;!#35;!#53:2])[cH1R1][cH1R1]1>>[*:1]C12CCC(CC1)(CC2)[*:2]"
   attachments: 2
   class: nonclassical
   context: "パラ二置換ベンゼン環をビシクロオクタン骨格に置き換える。置換基間の距離と一直線の配置を高い精度で再現する"
@@ -347,11 +351,12 @@
       - parent: "Cc1ccc(C(=O)Nc2ccc(Cl)cc2)cc1"
         products:
           - "CC12CCC(C(=O)Nc3ccc(Cl)cc3)(CC1)CC2"
-          - "Cc1ccc(C(=O)NC23CCC(Cl)(CC2)CC3)cc1"
-        note: "二箇所のパラフェニレンを持つベンズアニリド"
+        note: "二箇所のパラフェニレンを持つベンズアニリド（p-クロロフェニル環は対象外）"
     negative:
       - parent: "O=C(c1ccccc1)c1cccc(C(C)C(=O)O)c1"
         note: "ケトプロフェン（メタ二置換ベンゼン）"
+      - parent: "Cc1ccc(Cl)cc1"
+        note: "p-クロロトルエン（接続点がハロゲン）"
 
 - id: para_phenylene_to_cubane
   family: phenyl_ring_replacements

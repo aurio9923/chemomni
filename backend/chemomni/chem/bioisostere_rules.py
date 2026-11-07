@@ -1,7 +1,8 @@
 """The bioisostere rule table (M5): one YAML file per family under ``chemomni/data/bioisosteres/``.
 
-The files are vendored as they were delivered and are not edited here; a wrong rule is reported to its
-author. They are read once into an in-memory table. Only rules with ``status: active`` can be used;
+The files are vendored as they were delivered. Three edits were made here on the user's decision (PLAN Q62,
+each marked by a comment in the YAML); any other wrong rule is reported to its author instead. They are read
+once into an in-memory table. Only rules with ``status: active`` can be used;
 an ``excluded`` rule stays in the table (so tests can prove it is never offered) but ``RuleTable.get``
 answers as if it did not exist.
 

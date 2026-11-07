@@ -251,8 +251,10 @@ async for chunk in stream:
   The file name arrives as the browser gives it, but a Windows path must work too (`basename` splits on both
   separators: `Path("C:\\x\\a.sdf").stem` on Linux is the whole string). In `chem/io.py` the stacked-record check
   uses fragments' bounding boxes, not `split_molfile` (that one centres every fragment).
-- Bioisosteres (PLAN Q60, Q61): `data/bioisosteres/*.yaml` is vendored as delivered and never edited here
-  (a wrong rule goes back to its author). `chem/bioisostere_rules.py` loads it with Pydantic when the tool module is
+- Bioisosteres (PLAN Q60, Q61): `data/bioisosteres/*.yaml` is vendored as delivered; the only edits are the three
+  user-decided ones of PLAN Q62 (`para_phenylene_to_bcp` / `_bco` take no halogen as an attachment atom,
+  `pyrazole_to_isoxazole` gives both regioisomers; each has a dated comment in the YAML). Any other wrong rule goes
+  back to its author, and a rule change needs its example products and a regression test updated with it. `chem/bioisostere_rules.py` loads it with Pydantic when the tool module is
   imported, so a broken table stops the server; `RuleTable.get` treats `status: excluded` as unknown. In a rule,
   atoms with a map number are attachments that stay; unmapped reactant atoms are what is replaced. A *position* is a set
   of replaced atoms (`react_atom_idx` on the product tells which reactant atoms survived; the rest were replaced), not a
