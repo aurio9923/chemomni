@@ -251,6 +251,21 @@ async for chunk in stream:
   The file name arrives as the browser gives it, but a Windows path must work too (`basename` splits on both
   separators: `Path("C:\\x\\a.sdf").stem` on Linux is the whole string). In `chem/io.py` the stacked-record check
   uses fragments' bounding boxes, not `split_molfile` (that one centres every fragment).
+- Bioisosteres (PLAN Q60, Q61): `data/bioisosteres/*.yaml` is vendored as delivered and never edited here
+  (a wrong rule goes back to its author). `chem/bioisostere_rules.py` loads it with Pydantic when the tool module is
+  imported, so a broken table stops the server; `RuleTable.get` treats `status: excluded` as unknown. In a rule,
+  atoms with a map number are attachments that stay; unmapped reactant atoms are what is replaced. A *position* is a set
+  of replaced atoms (`react_atom_idx` on the product tells which reactant atoms survived; the rest were replaced), not a
+  raw `RunReactants` match: a ring template matches one ring 6-12 times. A selection keeps only positions whose replaced
+  atoms all lie inside it. Rules are written for neutral molecules: `Uncharger(canonicalOrder=True)` keeps the atom order,
+  so the user's atom numbers still hold; the grid parent stays the drawing as drawn, products are neutral. Duplicates
+  are found by canonical tautomer (`TautomerEnumerator.Canonicalize`), displayed as the product's own canonical SMILES.
+  Keep a `ChemicalReaction` alive while you use its templates: `AllChem.ReactionFromSmarts(s).GetReactantTemplate(0)`
+  on a temporary returns a dangling molecule (map numbers read as 0). Gitignore: `data/` is ignored for the runtime
+  database, so the package data folder is re-included with `!backend/chemomni/data/`. `tests/test_rule_table.py` runs
+  every rule's own examples (plain RDKit and through the engine); `tests/test_bioisostere.py` holds expectations
+  written by hand (never produced by running a rule). The model passes rule ids only; do not add a SMILES field to
+  `apply_bioisosteres`.
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.

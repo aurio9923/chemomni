@@ -1,0 +1,533 @@
+- id: aryl_cl_to_me
+  family: substituent_swaps
+  names:
+    en: ["aryl chloro -> aryl methyl", "Ar-Cl -> Ar-Me"]
+    ja: ["芳香族クロロ -> メチル"]
+  reaction: "[c:1][Cl]>>[c:1]C"
+  attachments: 1
+  class: classical
+  context: "芳香環に結合したクロロ基をメチル基に置き換える。かさ高さと脂溶性を保ちつつ電子的性質を電子供与性に変える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: metabolism
+      note: "芳香族メチル基はシトクロム酵素によりベンジル位の水酸化を受けやすく、代謝クリアランスが上がることがある"
+      confidence: high
+    - topic: potency_risk
+      note: "ハロゲン結合が失われ、芳香環の電子密度も上がるため電子的な相互作用が変化する"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(Cl)cc1"
+        products: ["COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(C)cc1"]
+        note: "インドメタシン"
+      - parent: "OC(=O)Cc1ccccc1Nc1c(Cl)cccc1Cl"
+        products: ["Cc1cccc(Cl)c1Nc1ccccc1CC(=O)O"]
+        note: "ジクロフェナク（二箇所の芳香族クロロ基）"
+    negative:
+      - parent: "ClCCc1ccccc1"
+        note: "フェネチルクロリド（脂肪族クロロ基）"
+
+- id: aryl_me_to_cl
+  family: substituent_swaps
+  names:
+    en: ["aryl methyl -> aryl chloro", "Ar-Me -> Ar-Cl"]
+    ja: ["芳香族メチル -> クロロ"]
+  reaction: "[c:1][CH3]>>[c:1]Cl"
+  attachments: 1
+  class: classical
+  context: "芳香環に結合したメチル基をクロロ基に置き換える。立体的な体積を維持しながらベンジル位の酸化的代謝を遮断する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "メチル基よりわずかに脂溶性が高まり、水溶性が下がることがある"
+      confidence: low
+    - topic: potency_risk
+      note: "電子供与性から電子求引性に変わるため、隣接するヘテロ原子の塩基性や水素結合能が変化する"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1ccc(cc1)S(=O)(=O)NC(=O)NN1CCCCCC1"
+        products: ["O=C(NN1CCCCCC1)NS(=O)(=O)c1ccc(Cl)cc1"]
+        note: "トラザミド（トルブタミド類縁体からクロルプロパミド型への変換）"
+      - parent: "CCN(CC)CC(=O)Nc1c(C)cccc1C"
+        products: ["CCN(CC)CC(=O)Nc1c(C)cccc1Cl"]
+        note: "リドカイン（二箇所の芳香族メチル基）"
+    negative:
+      - parent: "CN(C)CCOC(c1ccccc1)c1ccccc1"
+        note: "ジフェンヒドラミン（窒素上のメチル基のみ）"
+
+- id: aryl_me_to_trifluoromethyl
+  family: substituent_swaps
+  names:
+    en: ["aryl methyl -> aryl trifluoromethyl", "Ar-Me -> Ar-CF3"]
+    ja: ["芳香族メチル -> トリフルオロメチル"]
+  reaction: "[c:1][CH3]>>[c:1]C(F)(F)F"
+  attachments: 1
+  class: substituent
+  context: "芳香環に結合したメチル基をトリフルオロメチル基に置き換える。ベンジル位の水酸化を防ぎ、強い電子求引性と疎水性を与える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "脂溶性と分子量が増えるため、水溶性の低下や非特異的結合の増加につながることがある"
+      confidence: high
+    - topic: potency_risk
+      note: "メチル基より立体的に大きく強い電子求引性を持つため、狭いポケットや電子供与性を要する部位では不利になる"
+      confidence: high
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1ccc(cc1)-n1nc(cc1-c1ccc(cc1)S(N)(=O)=O)C(F)(F)F"
+        products: ["NS(=O)(=O)c1ccc(-c2cc(C(F)(F)F)nn2-c2ccc(C(F)(F)F)cc2)cc1"]
+        note: "セレコキシブ"
+      - parent: "CCN(CC)CC(=O)Nc1c(C)cccc1C"
+        products: ["CCN(CC)CC(=O)Nc1c(C)cccc1C(F)(F)F"]
+        note: "リドカイン（二箇所の芳香族メチル基）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（脂肪族メチル基のみ）"
+
+- id: aryl_br_to_trifluoromethyl
+  family: substituent_swaps
+  names:
+    en: ["aryl bromo -> aryl trifluoromethyl", "Ar-Br -> Ar-CF3"]
+    ja: ["芳香族ブロモ -> トリフルオロメチル"]
+  reaction: "[c:1][Br]>>[c:1]C(F)(F)F"
+  attachments: 1
+  class: classical
+  context: "芳香環上のブロモ基をトリフルオロメチル基に置き換える。同程度の立体的な大きさと疎水性を保ちながら重原子臭素を除く"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "臭素の強いハロゲン結合能が失われ、球状から四面体型への形状変化も伴う"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "CN(C)CCC(c1ccc(Br)cc1)c1ccccn1"
+        products: ["CN(C)CCC(c1ccc(C(F)(F)F)cc1)c1ccccn1"]
+        note: "ブロムフェニラミン"
+      - parent: "NCC1=CC(Br)=CC(Br)=C1N"
+        products:
+          - "NCc1cc(Br)cc(C(F)(F)F)c1N"
+          - "NCc1cc(C(F)(F)F)cc(Br)c1N"
+        note: "ブロムヘキシン前駆体（二箇所の芳香族ブロモ基）"
+    negative:
+      - parent: "BrCCc1ccccc1"
+        note: "脂肪族ブロミド"
+
+- id: aryl_br_to_cn
+  family: substituent_swaps
+  names:
+    en: ["aryl bromo -> aryl cyano", "Ar-Br -> Ar-CN"]
+    ja: ["芳香族ブロモ -> シアノ"]
+  reaction: "[c:1][Br]>>[c:1]C#N"
+  attachments: 1
+  class: substituent
+  context: "芳香環上のブロモ基をシアノ基に置き換える。電子求引性を維持しつつ脂溶性を大幅に下げ、水素結合受容能を付与する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "疎水的なハロゲンから直線状で極性の高いニトリルに変わるため、純粋な疎水ポケットでは親和性が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CN(C)CCC1(OCc2cc(Br)ccc12)c1ccc(F)cc1"
+        products: ["CN(C)CCC1(c2ccc(F)cc2)OCc2cc(C#N)ccc21"]
+        note: "シタロプラム臭素前駆体からシタロプラムへの変換"
+      - parent: "NCC1=CC(Br)=CC(Br)=C1N"
+        products:
+          - "Nc1c(CN)cc(Br)cc1C#N"
+          - "Nc1c(CN)cc(C#N)cc1Br"
+        note: "二箇所の芳香族ブロモ基を持つアニリン誘導体"
+    negative:
+      - parent: "OC(=O)Cc1ccccc1Nc1c(Cl)cccc1Cl"
+        note: "ジクロフェナク（クロロ基のみ）"
+
+- id: ome_to_difluoromethoxy
+  family: substituent_swaps
+  names:
+    en: ["methoxy -> difluoromethoxy", "OMe -> OCHF2"]
+    ja: ["メトキシ -> ジフルオロメトキシ"]
+  reaction: "[#6;!$(C=O):1][OX2][CH3]>>[#6:1]OC(F)F"
+  attachments: 1
+  class: substituent
+  context: "エーテル性のメトキシ基をジフルオロメトキシ基に置き換える。酸化的脱メチル化を抑え、独特な立体配座と弱い水素結合供与能を与える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "メトキシ基に比べて脂溶性が上がり、電子的にも電子供与性が弱まる"
+      confidence: medium
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "COc1ccc2cc(ccc2c1)[C@H](C)C(=O)O"
+        products: ["C[C@H](C(=O)O)c1ccc2cc(OC(F)F)ccc2c1"]
+        note: "ナプロキセン"
+      - parent: "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC"
+        products:
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC(F)F)c1OC"
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC(F)F"
+        note: "トリメトプリム（複数のメトキシ基）"
+    negative:
+      - parent: "COC(=O)c1ccccc1"
+        note: "安息香酸メチル（メチルエステル）"
+
+- id: ome_to_trifluoromethoxy
+  family: substituent_swaps
+  names:
+    en: ["methoxy -> trifluoromethoxy", "OMe -> OCF3"]
+    ja: ["メトキシ -> トリフルオロメトキシ"]
+  reaction: "[#6;!$(C=O):1][OX2][CH3]>>[#6:1]OC(F)(F)F"
+  attachments: 1
+  class: substituent
+  context: "エーテル性のメトキシ基をトリフルオロメトキシ基に置き換える。脱メチル化代謝を完全に防ぎ、芳香環平面から直交した配座をとる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "脂溶性が大きく上昇するため、水溶性の低下や組織蓄積性に注意が要る"
+      confidence: high
+    - topic: potency_risk
+      note: "メトキシ基が芳香環と同一平面を好むのに対し、トリフルオロメトキシ基は面外に張り出すため立体的な当たり方が変わる"
+      confidence: high
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "COc1ccc2nc(N)sc2c1"
+        products: ["Nc1nc2ccc(OC(F)(F)F)cc2s1"]
+        note: "リルゾール前駆メトキシ体からリルゾールへの変換"
+      - parent: "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC"
+        products:
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC(F)(F)F)c1OC"
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC(F)(F)F"
+        note: "トリメトプリム（複数のメトキシ基）"
+    negative:
+      - parent: "COC(=O)Cc1ccccc1Nc1c(Cl)cccc1Cl"
+        note: "ジクロフェナクメチルエステル"
+
+- id: ome_to_cyclopropyloxy
+  family: substituent_swaps
+  names:
+    en: ["methoxy -> cyclopropyloxy", "OMe -> O-cPr"]
+    ja: ["メトキシ -> シクロプロピルオキシ"]
+  reaction: "[#6;!$(C=O):1][OX2][CH3]>>[#6:1]OC1CC1"
+  attachments: 1
+  class: substituent
+  context: "エーテル性のメトキシ基をシクロプロピルオキシ基に置き換える。炭素の結合が強いため酸化的脱アルキル化を受けにくい"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "メチル基よりかさ高くなるため、狭いアルコキシ結合ポケットでは立体障害が生じることがある"
+      confidence: medium
+  refs:
+    - authors: "Talele TT"
+      year: 2016
+      journal: "Journal of Medicinal Chemistry"
+      title: "The Cyclopropyl Fragment is a Versatile Player that Frequently Appears in Preclinical/Clinical Drug Molecules"
+      doi: "10.1021/acs.jmedchem.6b00472"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "COc1ccc2cc(ccc2c1)[C@H](C)C(=O)O"
+        products: ["C[C@H](C(=O)O)c1ccc2cc(OC3CC3)ccc2c1"]
+        note: "ナプロキセン"
+      - parent: "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC"
+        products:
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC3CC3)c1OC"
+          - "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC2CC2"
+        note: "トリメトプリム（複数のメトキシ基）"
+    negative:
+      - parent: "CC(=O)OC"
+        note: "酢酸メチル（エステル）"
+
+- id: tbu_to_trifluoromethyl_cyclopropyl
+  family: substituent_swaps
+  names:
+    en: ["tert-butyl -> 1-(trifluoromethyl)cyclopropyl", "t-Bu -> CF3-cPr"]
+    ja: ["ターシャリーブチル -> トリフルオロメチルシクロプロピル"]
+  reaction: "[*:1][CX4R0]([CH3])([CH3])[CH3]>>[*:1]C1(C(F)(F)F)CC1"
+  attachments: 1
+  class: nonclassical
+  context: "ターシャリーブチル基をトリフルオロメチルシクロプロピル基に置き換える。疎水的なかさ高さを保ちつつメチル基の水酸化代謝を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: synthesis
+      note: "対応するフッ素化シクロプロパン試薬が必要となり、合成ステップが増えることがある"
+      confidence: medium
+    - topic: potency_risk
+      note: "球対称に近いターシャリーブチル基に比べて方向性があるため、ポケット形状との相性が影響する"
+      confidence: low
+  refs:
+    - authors: "Westphal MV, Wolfstadter BT, Plancher JM, Gatfield J, Carreira EM"
+      year: 2015
+      journal: "ChemMedChem"
+      title: "Evaluation of tert-Butyl Isosteres: Case Studies of Physicochemical and Pharmacokinetic Properties, Efficacies, and Activities"
+      doi: "10.1002/cmdc.201402502"
+      verified: true
+    - authors: "Talele TT"
+      year: 2016
+      journal: "Journal of Medicinal Chemistry"
+      title: "The Cyclopropyl Fragment is a Versatile Player that Frequently Appears in Preclinical/Clinical Drug Molecules"
+      doi: "10.1021/acs.jmedchem.6b00472"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)(C)c1ccc(cc1)C(O)CCCN1CCC(CC1)C(O)(c1ccccc1)c1ccccc1"
+        products: ["OC(CCCN1CCC(C(O)(c2ccccc2)c2ccccc2)CC1)c1ccc(C2(C(F)(F)F)CC2)cc1"]
+        note: "テルフェナジン"
+      - parent: "CC(C)(C)c1cc(cc(c1O)C(C)(C)C)C(=O)c1ccccc1"
+        products: ["CC(C)(C)c1cc(C(=O)c2ccccc2)cc(C2(C(F)(F)F)CC2)c1O"]
+        note: "ジターシャリーブチルフェノール誘導体（二箇所のターシャリーブチル基）"
+    negative:
+      - parent: "Cc1ccc(C)c(OCCCCC(C)(C)C(=O)O)c1"
+        note: "ゲムフィブロジル（鎖内部のジメチル四級炭素）"
+
+- id: tbu_to_methyloxetanyl
+  family: substituent_swaps
+  names:
+    en: ["tert-butyl -> 3-methyloxetan-3-yl"]
+    ja: ["ターシャリーブチル -> メチルオキセタニル"]
+  reaction: "[*:1][CX4R0]([CH3])([CH3])[CH3]>>[*:1]C1(C)COC1"
+  attachments: 1
+  class: nonclassical
+  context: "ターシャリーブチル基をメチルオキセタニル基に置き換える。立体的な広がりを保ちながら脂溶性を大きく下げ、水溶性と代謝安定性を改善する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "極性のエーテル酸素が導入されるため、強い疎水性相互作用が求められるポケットでは結合力が落ちることがある"
+      confidence: high
+    - topic: synthesis
+      note: "強酸性条件ではオキセタン環の開環に注意が要る"
+      confidence: medium
+  refs:
+    - authors: "Westphal MV, Wolfstadter BT, Plancher JM, Gatfield J, Carreira EM"
+      year: 2015
+      journal: "ChemMedChem"
+      title: "Evaluation of tert-Butyl Isosteres: Case Studies of Physicochemical and Pharmacokinetic Properties, Efficacies, and Activities"
+      doi: "10.1002/cmdc.201402502"
+      verified: true
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)(C)NCC(O)c1ccc(O)c(CO)c1"
+        products: ["CC1(NCC(O)c2ccc(O)c(CO)c2)COC1"]
+        note: "サルブタモール"
+      - parent: "CC(C)(C)c1cc(cc(c1O)C(C)(C)C)C(=O)c1ccccc1"
+        products: ["CC(C)(C)c1cc(C(=O)c2ccccc2)cc(C2(C)COC2)c1O"]
+        note: "ジターシャリーブチルフェノール誘導体（二箇所のターシャリーブチル基）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（イソプロピル基のみ）"
+
+- id: tbu_to_pentafluorosulfanyl
+  family: substituent_swaps
+  names:
+    en: ["aryl tert-butyl -> pentafluorosulfanyl", "Ar-tBu -> Ar-SF5"]
+    ja: ["芳香族ターシャリーブチル -> ペンタフルオロスルファニル"]
+  reaction: "[c:1][CX4R0]([CH3])([CH3])[CH3]>>[c:1]S(F)(F)(F)(F)F"
+  attachments: 1
+  class: nonclassical
+  context: "芳香環上のターシャリーブチル基をペンタフルオロスルファニル基に置き換える。同等のかさ高さと高い脂溶性・代謝安定性を与える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "電子供与性のアルキル基から極めて強い電子求引性基へ変わるため、芳香環の電子状態が大きく変化する"
+      confidence: high
+    - topic: synthesis
+      note: "導入できる市販ビルディングブロックが限られており、後半工程での直接導入が難しい"
+      confidence: high
+  refs:
+    - authors: "Westphal MV, Wolfstadter BT, Plancher JM, Gatfield J, Carreira EM"
+      year: 2015
+      journal: "ChemMedChem"
+      title: "Evaluation of tert-Butyl Isosteres: Case Studies of Physicochemical and Pharmacokinetic Properties, Efficacies, and Activities"
+      doi: "10.1002/cmdc.201402502"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)(C)c1ccc(cc1)C(O)CCCN1CCC(CC1)C(O)(c1ccccc1)c1ccccc1"
+        products: ["OC(CCCN1CCC(C(O)(c2ccccc2)c2ccccc2)CC1)c1ccc(S(F)(F)(F)(F)F)cc1"]
+        note: "テルフェナジン"
+      - parent: "CC(C)(C)c1cc(cc(c1O)C(C)(C)C)C(=O)c1ccccc1"
+        products: ["CC(C)(C)c1cc(C(=O)c2ccccc2)cc(S(F)(F)(F)(F)F)c1O"]
+        note: "ジターシャリーブチルフェノール誘導体（二箇所の芳香族ターシャリーブチル基）"
+    negative:
+      - parent: "CC(C)(C)NCC(O)c1ccc(O)c(CO)c1"
+        note: "サルブタモール（脂肪族窒素上のターシャリーブチル基）"
+
+- id: trifluoromethyl_to_pentafluorosulfanyl
+  family: substituent_swaps
+  names:
+    en: ["aryl trifluoromethyl -> pentafluorosulfanyl", "Ar-CF3 -> Ar-SF5"]
+    ja: ["芳香族トリフルオロメチル -> ペンタフルオロスルファニル"]
+  reaction: "[c:1][CX4R0](F)(F)F>>[c:1]S(F)(F)(F)(F)F"
+  attachments: 1
+  class: nonclassical
+  context: "芳香環上のトリフルオロメチル基をペンタフルオロスルファニル基に置き換える。さらに強い電子求引性と疎水性・かさ高さを与える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "脂溶性と分子量がさらに高まるため、水溶性の低下に注意が要る"
+      confidence: high
+    - topic: synthesis
+      note: "対応するペンタフルオロスルファニル置換芳香族原料の入手性が限られることがある"
+      confidence: medium
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "CNCCC(Oc1ccc(cc1)C(F)(F)F)c1ccccc1"
+        products: ["CNCCC(Oc1ccc(S(F)(F)(F)(F)F)cc1)c1ccccc1"]
+        note: "フルオキセチン"
+      - parent: "OC(c1cc(nc2c(cccc12)C(F)(F)F)C(F)(F)F)C1CCCCN1"
+        products:
+          - "OC(c1cc(C(F)(F)F)nc2c(S(F)(F)(F)(F)F)cccc12)C1CCCCN1"
+          - "OC(c1cc(S(F)(F)(F)(F)F)nc2c(C(F)(F)F)cccc12)C1CCCCN1"
+        note: "メフロキン（二箇所の芳香族トリフルオロメチル基）"
+    negative:
+      - parent: "FC(F)(F)CC(=O)Nc1ccccc1"
+        note: "脂肪族トリフルオロメチル誘導体"

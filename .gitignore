@@ -19,6 +19,7 @@ frontend/dist/
 .env.*
 !.env.example
 data/
+!backend/chemomni/data/
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

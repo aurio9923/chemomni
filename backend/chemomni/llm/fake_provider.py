@@ -46,12 +46,28 @@ class FakeProvider:
     def _rule_based(messages: list[Message]) -> ScriptTurn:
         """Keywords in the user's message pick a tool: 'pyridine' / 'fluor' scan the selection, 'analog'
         proposes a series, 'replace' / 'methyl' edit the first molecule, 'highlight' selects atom 1,
-        anything else computes properties."""
+        'bioisostere' looks for rules and applies the first three that fit (to the selection or the only
+        molecule), anything else computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
             result = json.loads(last["content"])
             if not result.get("ok"):
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "distinct_products" in result:  # apply_bioisosteres
+                return [
+                    {
+                        "text": f"Applied {len(result['rules'])} rule(s): {len(result['accepted'])} product(s) "
+                        f"in tab {result['tab_name']}."
+                    }
+                ]
+            if "rules" in result and "molecule" in result:  # find_bioisosteres: apply the first few that fit
+                ids = [r["id"] for r in result["rules"]][:3]
+                if not ids:
+                    return [{"text": "No bioisostere rule fits."}]
+                asked = next((m for m in reversed(messages) if m["role"] == "user"), None)
+                ref = re.search(r"(?:compound|化合物)\s*(\d+[a-z]?)", str(asked["content"]).lower()) if asked else None
+                args = {"rule_ids": ids, "title": "Bioisosteres", **({"ref": ref.group(1)} if ref else {})}
+                return [{"tool": "apply_bioisosteres", "args": args}]
             if "searched" in result:
                 return [{"text": f"{result['matches']} of {result['searched']} structure(s) contain the query."}]
             if "selected" in result and "accepted" in result:
@@ -89,6 +105,11 @@ class FakeProvider:
         ref = re.search(r"(?:compound|化合物)\s*(\d+[a-z]?)", text)
         if ref and ("substructure" in text or "部分構造" in text):  # the numbered drawing is the query
             return [{"tool": "substructure_search", "args": {"query_ref": ref.group(1)}}]
+        if "bioisoster" in text or "バイオアイソスター" in text:
+            args = {"ref": ref.group(1)} if ref else {}
+            if "acid" in text or "カルボン酸" in text:
+                args["family"] = "carboxylic_acid_isosteres"
+            return [{"tool": "find_bioisosteres", "args": args}]
         if "methyl" in text and "fluor" in text:  # both, on different atoms
             changes = [{"operation": "substitute", "group": "F"}, {"operation": "substitute", "group": "C"}]
             return [{"tool": "scan_positions", "args": {"changes": changes, "title": "F + Me scan"}}]

@@ -1,0 +1,513 @@
+- id: gem_dimethyl_to_oxetane
+  family: saturated_ring_and_chain
+  names:
+    en: ["gem-dimethyl -> 3,3-disubstituted oxetane", "C(Me)2 -> oxetane"]
+    ja: ["ジメチルメチレン -> オキセタン"]
+  reaction: "[*;!$([CH3]):1][CX4R0]([CH3])([CH3])[*;!$([CH3]):2]>>[*:1]C1([*:2])COC1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のジメチル置換四級炭素をオキセタン環に置き換える。かさ高さを保ちつつ脂溶性を下げ、代謝安定性を改善する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: synthesis
+      note: "強酸性条件や強い求核剤の存在下でオキセタン環が開環することがある"
+      confidence: medium
+    - topic: potency_risk
+      note: "環内の酸素原子が新たに水素結合受容能を持つため、純粋に疎水的なポケットでは不利になることがある"
+      confidence: medium
+  refs:
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1ccc(C)c(OCCCCC(C)(C)C(=O)O)c1"
+        products: ["Cc1ccc(C)c(OCCCCC2(C(=O)O)COC2)c1"]
+        note: "ゲムフィブロジル"
+      - parent: "CC(C)(Oc1ccc(CCNC(=O)c2ccc(Cl)cc2)cc1)C(=O)O"
+        products: ["O=C(NCCc1ccc(OC2(C(=O)O)COC2)cc1)c1ccc(Cl)cc1"]
+        note: "ベザフィブラート"
+      - parent: "O=C(O)C(C)(C)CCCC(C)(C)C(=O)O"
+        products: ["O=C(O)C(C)(C)CCCC1(C(=O)O)COC1"]
+        note: "二箇所のジメチル四級炭素を持つジカルボン酸"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（イソプロピル基のみ）"
+      - parent: "CC(C)(C)c1ccc(O)cc1"
+        note: "ターシャリーブチルフェノール（末端三置換メチル）"
+
+- id: gem_dimethyl_to_cyclopropane
+  family: saturated_ring_and_chain
+  names:
+    en: ["gem-dimethyl -> 1,1-disubstituted cyclopropane", "C(Me)2 -> cyclopropylidene"]
+    ja: ["ジメチルメチレン -> シクロプロパン"]
+  reaction: "[*;!$([CH3]):1][CX4R0]([CH3])([CH3])[*;!$([CH3]):2]>>[*:1]C1([*:2])CC1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のジメチル置換四級炭素をシクロプロパン環に置き換える。炭素数を変えずにメチル基の酸化代謝を抑え配座を固定する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "三員環の形成により結合角が大きく変化し、隣接する置換基の張り出し方向が変わる"
+      confidence: medium
+  refs:
+    - authors: "Talele TT"
+      year: 2016
+      journal: "Journal of Medicinal Chemistry"
+      title: "The Cyclopropyl Fragment is a Versatile Player that Frequently Appears in Preclinical/Clinical Drug Molecules"
+      doi: "10.1021/acs.jmedchem.6b00472"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1ccc(C)c(OCCCCC(C)(C)C(=O)O)c1"
+        products: ["Cc1ccc(C)c(OCCCCC2(C(=O)O)CC2)c1"]
+        note: "ゲムフィブロジル"
+      - parent: "O=C(O)C(C)(C)CCCC(C)(C)C(=O)O"
+        products: ["O=C(O)C(C)(C)CCCC1(C(=O)O)CC1"]
+        note: "二箇所のジメチル四級炭素を持つジカルボン酸"
+    negative:
+      - parent: "CC(C)(C)NCC(O)c1ccc(O)c(CO)c1"
+        note: "サルブタモール（末端ターシャリーブチル基）"
+
+- id: ketone_to_oxetane
+  family: saturated_ring_and_chain
+  names:
+    en: ["ketone -> 3,3-disubstituted oxetane", "carbonyl -> oxetane"]
+    ja: ["ケトン -> オキセタン"]
+  reaction: "[#6:1][CX3R0](=O)[#6:2]>>[#6:1]C1([#6:2])COC1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のケトンカルボニル基をオキセタン環に置き換える。カルボニル酸素の孤立電子対の広がりと双極子を模倣しつつ求電子性をなくす"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "平面のカルボニル炭素から四面体型の環炭素に変わるため、両側の置換基のなす角度が狭まる"
+      confidence: high
+    - topic: metabolism
+      note: "ケトン還元酵素によるアルコールへの代謝を防げる一方、脂溶性と分子量が少し変化する"
+      confidence: medium
+  refs:
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C(c1ccccc1)c1cccc(C(C)C(=O)O)c1"
+        products: ["CC(C(=O)O)c1cccc(C2(c3ccccc3)COC2)c1"]
+        note: "ケトプロフェン（ケトン部位のみ変換、カルボン酸は不変）"
+      - parent: "CC(=O)c1ccc(C(=O)c2ccccc2)cc1"
+        products:
+          - "CC(=O)c1ccc(C2(c3ccccc3)COC2)cc1"
+          - "CC1(c2ccc(C(=O)c3ccccc3)cc2)COC1"
+        note: "アセチルベンゾフェノン（二箇所の鎖状ケトン）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（カルボン酸のみ）"
+      - parent: "O=C1CCCCC1"
+        note: "シクロヘキサノン（環状ケトン）"
+
+- id: morpholine_to_oxa_azaspiroheptane
+  family: saturated_ring_and_chain
+  names:
+    en: ["morpholine -> 2-oxa-6-azaspiro[3.3]heptane", "morpholine -> spiro-oxetane-azetidine"]
+    ja: ["モルホリン -> オキサアザスピロヘプタン"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][OX2R1][CH2R1][CH2R1]1>>[*:1]N1CC2(C1)COC2"
+  attachments: 1
+  class: nonclassical
+  context: "窒素置換のモルホリン環をスピロ二環骨格に置き換える。窒素と酸素の距離を保ちつつ脂溶性を下げ、代謝安定性を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: synthesis
+      note: "強酸性条件でスピロオキセタン環が開環することがあり、使える反応条件が限られる"
+      confidence: medium
+    - topic: ionization
+      note: "アゼチジン環への変換により窒素原子の塩基性がモルホリンと少し異なる"
+      confidence: low
+  refs:
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+    - authors: "Zheng Y, Tice CM, Singh SB"
+      year: 2014
+      journal: "Bioorganic & Medicinal Chemistry Letters"
+      title: "The use of spirocyclic scaffolds in drug discovery"
+      doi: "10.1016/j.bmcl.2014.06.081"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)NC[C@H]1CN(C(=O)O1)c1ccc(N2CCOCC2)c(F)c1"
+        products: ["CC(=O)NC[C@H]1CN(c2ccc(N3CC4(C3)COC4)c(F)c2)C(=O)O1"]
+        note: "リネゾリド"
+      - parent: "c1cc(N2CCOCC2)nc(N3CCOCC3)n1"
+        products:
+          - "c1cc(N2CC3(COC3)C2)nc(N2CCOCC2)n1"
+          - "c1cc(N2CCOCC2)nc(N2CC3(COC3)C2)n1"
+        note: "ビスモルホリノピリミジン（非対称な二箇所のモルホリン）"
+    negative:
+      - parent: "C1CNCCN1c1ccccc1"
+        note: "フェニルピペラジン（モルホリンではない）"
+
+- id: piperidine_to_azaspiroheptane
+  family: saturated_ring_and_chain
+  names:
+    en: ["piperidine -> 2-azaspiro[3.3]heptane"]
+    ja: ["ピペリジン -> アザスピロヘプタン"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][CH2R1][CH2R1][CH2R1]1>>[*:1]N1CC2(C1)CCC2"
+  attachments: 1
+  class: nonclassical
+  context: "窒素置換の無置換ピペリジン環をアザスピロヘプタンに置き換える。いす形配座の揺らぎを抑え、対称な三次元形状を与える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "六員環と四員環スピロ骨格では環平面に対するメチレンの張り出し方が異なるため、疎水ポケットとの接触が変わる"
+      confidence: medium
+  refs:
+    - authors: "Zheng Y, Tice CM, Singh SB"
+      year: 2014
+      journal: "Bioorganic & Medicinal Chemistry Letters"
+      title: "The use of spirocyclic scaffolds in drug discovery"
+      doi: "10.1016/j.bmcl.2014.06.081"
+      verified: true
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C(CCCN1CCCCC1)c1ccc(F)cc1"
+        products: ["O=C(CCCN1CC2(C1)CCC2)c1ccc(F)cc1"]
+        note: "ブチロフェノン系ピペリジン誘導体"
+      - parent: "c1cc(N2CCCCC2)nc(N3CCCCC3)n1"
+        products:
+          - "c1cc(N2CC3(CCC3)C2)nc(N2CCCCC2)n1"
+          - "c1cc(N2CCCCC2)nc(N2CC3(CCC3)C2)n1"
+        note: "ビスピペリジノピリミジン（非対称な二箇所のピペリジン）"
+    negative:
+      - parent: "CC(=O)NC[C@H]1CN(C(=O)O1)c1ccc(N2CCOCC2)c(F)c1"
+        note: "リネゾリド（モルホリン環）"
+
+- id: piperidine_to_difluoropiperidine
+  family: saturated_ring_and_chain
+  names:
+    en: ["piperidine -> 4,4-difluoropiperidine"]
+    ja: ["ピペリジン -> ジフルオロピペリジン"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][CH2R1][CH2R1][CH2R1]1>>[*:1]N1CCC(F)(F)CC1"
+  attachments: 1
+  class: nonclassical
+  context: "窒素置換の無置換ピペリジン環の四位メチレンをジフルオロメチレンに置き換える。酸化的代謝のブロックと塩基性の低減に使われる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: ionization
+      note: "フッ素の強い誘起効果によりピペリジン窒素の塩基性が大きく下がるため、カチオン相互作用が必要な場合は注意が要る"
+      confidence: high
+    - topic: lipophilicity
+      note: "極性環境や置換様式によって脂溶性と双極子が変化する"
+      confidence: medium
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C(CCCN1CCCCC1)c1ccc(F)cc1"
+        products: ["O=C(CCCN1CCC(F)(F)CC1)c1ccc(F)cc1"]
+        note: "ブチロフェノン系ピペリジン誘導体"
+      - parent: "c1cc(N2CCCCC2)nc(N3CCCCC3)n1"
+        products:
+          - "FC1(F)CCN(c2ccnc(N3CCCCC3)n2)CC1"
+          - "FC1(F)CCN(c2nccc(N3CCCCC3)n2)CC1"
+        note: "ビスピペリジノピリミジン（非対称な二箇所のピペリジン）"
+    negative:
+      - parent: "O=C(CCCN1CCC(O)(c2ccc(Cl)cc2)CC1)c1ccc(F)cc1"
+        note: "ハロペリドール（四位に置換基があるピペリジン）"
+
+- id: piperazine_to_diazaspiroheptane
+  family: saturated_ring_and_chain
+  names:
+    en: ["1,4-piperazine -> 2,6-diazaspiro[3.3]heptane"]
+    ja: ["ピペラジン -> ジアザスピロヘプタン"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][NX3R1]([*:2])[CH2R1][CH2R1]1>>[*:1]N1CC2(C1)CN([*:2])C2"
+  attachments: 2
+  class: nonclassical
+  context: "二置換ピペラジン環をジアザスピロヘプタンに置き換える。二つの窒素原子間の距離を保ちつつ配座を固定し極性を調整する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "二つのアゼチジン環が直交するため、両端の置換基のねじれ角がピペラジンとは異なる"
+      confidence: high
+    - topic: synthesis
+      note: "スピロジアミン骨格のビルディングブロックはピペラジンより高価になることがある"
+      confidence: low
+  refs:
+    - authors: "Zheng Y, Tice CM, Singh SB"
+      year: 2014
+      journal: "Bioorganic & Medicinal Chemistry Letters"
+      title: "The use of spirocyclic scaffolds in drug discovery"
+      doi: "10.1016/j.bmcl.2014.06.081"
+      verified: true
+    - authors: "Burkhard JA, Wuitschik G, Rogers-Evans M, Muller K, Carreira EM"
+      year: 2010
+      journal: "Angewandte Chemie International Edition"
+      title: "Oxetanes as Versatile Elements in Drug Discovery and Synthesis"
+      doi: "10.1002/anie.200907155"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(n1)-c1cccnc1"
+        products: ["Cc1ccc(NC(=O)c2ccc(CN3CC4(C3)CN(C)C4)cc2)cc1Nc1nccc(-c2cccnc2)n1"]
+        note: "イマチニブ"
+      - parent: "CN1CCN(CC1)c1ccc(C(=O)N2CCN(C)CC2)cc1"
+        products:
+          - "CN1CCN(C(=O)c2ccc(N3CC4(C3)CN(C)C4)cc2)CC1"
+          - "CN1CCN(c2ccc(C(=O)N3CC4(C3)CN(C)C4)cc2)CC1"
+        note: "二箇所のピペラジンを持つベンズアミド"
+    negative:
+      - parent: "CC(=O)NC[C@H]1CN(C(=O)O1)c1ccc(N2CCOCC2)c(F)c1"
+        note: "リネゾリド（モルホリン環）"
+
+- id: pyrrolidine_to_azetidine
+  family: saturated_ring_and_chain
+  names:
+    en: ["N-substituted pyrrolidine -> N-substituted azetidine"]
+    ja: ["ピロリジン -> アゼチジン（環縮小）"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][CH2R1][CH2R1]1>>[*:1]N1CCC1"
+  attachments: 1
+  class: ring_replacement
+  context: "窒素置換の無置換ピロリジン環をアゼチジン環に縮小する。脂溶性と分子量を下げて代謝安定性を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: -1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: metabolism
+      note: "四員環のひずみにより、強酸性条件や求核性代謝経路で開環しやすくなることがある"
+      confidence: medium
+    - topic: potency_risk
+      note: "環が小さくなるため、疎水的なポケットへの充填率が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C1CCCN1CC(=O)N1CCCC1"
+        products: ["O=C1CCCN1CC(=O)N1CCC1"]
+        note: "ピロリジンアミド誘導体（ラクタム環は不変）"
+      - parent: "c1cc(N2CCCC2)nc(N3CCCC3)n1"
+        products:
+          - "c1cc(N2CCC2)nc(N2CCCC2)n1"
+          - "c1cc(N2CCCC2)nc(N2CCC2)n1"
+        note: "ビスピロリジノピリミジン（非対称な二箇所のピロリジン）"
+    negative:
+      - parent: "O=C1CCCN1CC(=O)N"
+        note: "ピラセタム（カルボニルを含むピロリジノン環のみ）"
+
+- id: piperidine_to_pyrrolidine
+  family: saturated_ring_and_chain
+  names:
+    en: ["N-substituted piperidine -> N-substituted pyrrolidine"]
+    ja: ["ピペリジン -> ピロリジン（環縮小）"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][CH2R1][CH2R1][CH2R1]1>>[*:1]N1CCCC1"
+  attachments: 1
+  class: ring_replacement
+  context: "窒素置換の無置換ピペリジン環をピロリジン環に縮小する。脂溶性の低減や立体的なかさ高さの微調整に使われる"
+  creates_stereocenter: false
+  net_heavy_atom_change: -1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "いす形六員環から封筒形五員環へ変わるため、配座と疎水接触の広がりが変化する"
+      confidence: medium
+  refs:
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "Nc1nc(N)c(nc1N1CCCCC1)[N+]([O-])=O"
+        products: ["Nc1nc(N)c([N+](=O)[O-])nc1N1CCCC1"]
+        note: "ミノキシジル脱酸素類縁体"
+      - parent: "c1cc(N2CCCCC2)nc(N3CCCCC3)n1"
+        products:
+          - "c1cc(N2CCCC2)nc(N2CCCCC2)n1"
+          - "c1cc(N2CCCCC2)nc(N2CCCC2)n1"
+        note: "ビスピペリジノピリミジン（非対称な二箇所のピペリジン）"
+    negative:
+      - parent: "CC(=O)NC[C@H]1CN(C(=O)O1)c1ccc(N2CCOCC2)c(F)c1"
+        note: "リネゾリド（モルホリン環）"
+
+- id: morpholine_to_thiomorpholine_dioxide
+  family: saturated_ring_and_chain
+  names:
+    en: ["morpholine -> thiomorpholine 1,1-dioxide"]
+    ja: ["モルホリン -> チオモルホリンジオキシド"]
+  reaction: "[*:1][NX3R1]1[CH2R1][CH2R1][OX2R1][CH2R1][CH2R1]1>>[*:1]N1CCS(=O)(=O)CC1"
+  attachments: 1
+  class: ring_replacement
+  context: "窒素置換のモルホリン環をスルホン型のチオモルホリンジオキシドに置き換える。極性を高め、モルホリン環の酸化的代謝を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "スルホン基の導入により極性表面積と分子量が増え、膜透過性が下がることがある"
+      confidence: medium
+    - topic: ionization
+      note: "スルホン基の電子求引効果により環内の窒素原子の塩基性が低下する"
+      confidence: high
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)NC[C@H]1CN(C(=O)O1)c1ccc(N2CCOCC2)c(F)c1"
+        products: ["CC(=O)NC[C@H]1CN(c2ccc(N3CCS(=O)(=O)CC3)c(F)c2)C(=O)O1"]
+        note: "リネゾリド（スutezolidスルホン代謝物型類縁体）"
+      - parent: "c1cc(N2CCOCC2)nc(N3CCOCC3)n1"
+        products:
+          - "O=S1(=O)CCN(c2ccnc(N3CCOCC3)n2)CC1"
+          - "O=S1(=O)CCN(c2nccc(N3CCOCC3)n2)CC1"
+        note: "ビスモルホリノピリミジン（非対称な二箇所のモルホリン）"
+    negative:
+      - parent: "O=C(CCCN1CCCCC1)c1ccc(F)cc1"
+        note: "ピペリジン誘導体（酸素を持たない環）"
+
+- id: isopropyl_to_cyclopropyl
+  family: saturated_ring_and_chain
+  names:
+    en: ["isopropyl -> cyclopropyl", "i-Pr -> c-Pr"]
+    ja: ["イソプロピル -> シクロプロピル"]
+  reaction: "[*:1][CH1R0]([CH3])[CH3]>>[*:1]C1CC1"
+  attachments: 1
+  class: classical
+  context: "鎖状のイソプロピル基をシクロプロピル基に置き換える。炭素数を変えずに脂溶性を下げ、三級炭素やメチル基の酸化代謝を抑える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: toxicity_alert
+      note: "ヘテロ原子に直結したシクロプロピル基（特にシクロプロピルアミン）はラジカル開環によりシトクロム酵素の時間依存的阻害を起こすことがある"
+      confidence: high
+    - topic: potency_risk
+      note: "三員環のひずみにより炭素結合がわずかに短くなり、疎水ポケット内での広がりが小さくなる"
+      confidence: medium
+  refs:
+    - authors: "Talele TT"
+      year: 2016
+      journal: "Journal of Medicinal Chemistry"
+      title: "The Cyclopropyl Fragment is a Versatile Player that Frequently Appears in Preclinical/Clinical Drug Molecules"
+      doi: "10.1021/acs.jmedchem.6b00472"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        products: ["CC(C(=O)O)c1ccc(CC2CC2)cc1"]
+        note: "イブプロフェン"
+      - parent: "CC(C)NCC(O)COc1ccc(CC(=O)N)cc1"
+        products: ["NC(=O)Cc1ccc(OCC(O)CNC2CC2)cc1"]
+        note: "アテノロール"
+      - parent: "CC(C)c1ccc(C(C)C)cc1"
+        products: ["CC(C)c1ccc(C2CC2)cc1"]
+        note: "ジイソプロピルベンゼン（二箇所のイソプロピル基）"
+    negative:
+      - parent: "CC(C)(C)c1ccc(O)cc1"
+        note: "ターシャリーブチルフェノール（四級炭素）"
+      - parent: "CCCc1ccc(O)cc1"
+        note: "プロピルフェノール（直鎖プロピル基）"
