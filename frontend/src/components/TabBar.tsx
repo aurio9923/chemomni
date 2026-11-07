@@ -1,7 +1,73 @@
-import { Copy, Hash, History, Plus, Sparkles, Split, X } from 'lucide-react'
-import { useState } from 'react'
+import { Copy, Download, FileUp, Hash, History, Plus, Sparkles, Split, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
+import { IMPORT_ACCEPT } from '../lib/files'
 import { useWorkspace } from '../store/workspace'
+
+const EXPORTS = [
+  { format: 'sdf', label: 'SDF with properties' },
+  { format: 'csv', label: 'CSV with properties' },
+  { format: 'smi', label: 'SMILES list' },
+] as const
+
+/** Export of the active tab with properties and numbers. (Ketcher's own "Save as" writes one structure format.) */
+function ExportMenu() {
+  const exportTab = useWorkspace((s) => s.exportTab)
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const close = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const escape = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [open])
+
+  return (
+    <div ref={root} className="relative">
+      <button
+        type="button"
+        title="Export this tab with properties and compound numbers"
+        aria-label="Export"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="rounded p-1 hover:bg-line hover:text-ink"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <Download className="size-4" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute top-full right-0 z-50 mt-1 w-48 rounded-md border border-line bg-white py-1 text-[13px] text-ink shadow-lg"
+        >
+          {EXPORTS.map(({ format, label }) => (
+            <button
+              key={format}
+              type="button"
+              role="menuitem"
+              data-testid={`export-${format}`}
+              className="block w-full px-3 py-1.5 text-left hover:bg-panel"
+              onClick={() => {
+                setOpen(false)
+                void exportTab(format)
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function TabBar() {
   const {
@@ -13,11 +79,13 @@ export function TabBar() {
     duplicateTab,
     splitTab,
     numberCompounds,
+    importFile,
     renameTab,
     restoreLastClosed,
     saving,
   } = useWorkspace()
   const [editing, setEditing] = useState<string | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   return (
     <div className="flex h-9 shrink-0 items-end gap-0.5 border-b border-line bg-panel px-1.5" role="tablist">
@@ -125,6 +193,31 @@ export function TabBar() {
         >
           <Hash className="size-4" />
         </button>
+        <button
+          type="button"
+          title="Import a file into a new tab: SDF, molfile, SMILES list, CSV, KET, CDXML. Several structures open on one numbered tab."
+          aria-label="Import file"
+          className="rounded p-1 hover:bg-line hover:text-ink"
+          onClick={() => fileInput.current?.click()}
+        >
+          <FileUp className="size-4" />
+        </button>
+        <input
+          ref={fileInput}
+          type="file"
+          multiple
+          hidden
+          accept={IMPORT_ACCEPT}
+          data-testid="import-input"
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])]
+            e.target.value = '' // the same file can be imported again
+            void (async () => {
+              for (const file of files) await importFile(file)
+            })()
+          }}
+        />
+        <ExportMenu />
         <button
           type="button"
           title="Reopen closed tab"

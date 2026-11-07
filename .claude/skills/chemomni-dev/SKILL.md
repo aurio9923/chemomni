@@ -231,6 +231,26 @@ async for chunk in stream:
   older `data.content` Lexical shape), so "Number compounds" is `POST /api/chem/number-compounds` (KET in, KET out)
   followed by `bridge.setKet` (an ordinary undoable edit, autosaved). `getSmarts()` keeps aromatic atoms of an
   imported SMARTS where the molfile loses them (the molfile path then matches aliphatic rings too).
+- Import and export (`chem/io.py`, PLAN Q59). What Ketcher 3.18 does on its own (checked in a real browser): the Open
+  dialog takes a file or pasted text and offers "Open as New Project" / "Add to Canvas"; a single-structure file
+  (mol, one-record SDF, one-line SMILES, KET) is fine, but **a multi-record SDF puts every record at its own
+  coordinates, i.e. stacked on top of each other**, and **a multi-line `.smi` leaves the dialog open forever** (the
+  structures do load). Save as offers KET, Molfile V2000/V3000, SDF V2000/V3000, RDF, SMARTS, SMILES, Extended SMILES,
+  CML, InChI, InChIKey, SVG, PNG, CDXML, CDX; none of them carries properties or our compound numbers. So the app
+  adds: `POST /api/tabs/import` (`{filename, text}` -> new tab; `.sdf/.sd/.mol` records are split on `$$$$` and read
+  unsanitized, `.smi/.txt` lines are `SMILES [name]` with an optional header and `#` comments, `.csv/.tsv` need a
+  `smiles`-like header column; one structure keeps its drawing, several go on a `layout.grid` with every structure
+  centred at Ketcher's bond length; 3D records are depicted flat without hydrogens; at most 200 structures, the rest
+  is reported) and `POST /api/chem/export` (`{format: sdf|csv|smi, molfile, ket, name}`; the client sends the
+  editor's V3000 molfile and KET, `build_compounds` gives the numbers, queries are reported and skipped, SDF fields
+  are `Number` plus the property names of `compute_properties`). KET / CDXML / RXN files are not parsed by the
+  backend (it cannot read them): the client creates a tab and calls `bridge.setStructure` (= `setMolecule`, which
+  detects the format), and closes the tab again when Ketcher throws. After a multi-structure import the client
+  numbers the tab (`numberActive(expected)` waits until the KET shows that many molecules: a read right after a
+  load can still be empty). Record names (`_Name`, `ID`) are not used as labels; numbers are 1..N in file order.
+  The file name arrives as the browser gives it, but a Windows path must work too (`basename` splits on both
+  separators: `Path("C:\\x\\a.sdf").stem` on Linux is the whole string). In `chem/io.py` the stacked-record check
+  uses fragments' bounding boxes, not `split_molfile` (that one centres every fragment).
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.

@@ -105,11 +105,11 @@ def split_molfile(molfile: str) -> list[tuple[str, str | None]]:
     parts: list[tuple[str, str | None]] = []
     for frag in Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=False):
         frag = centred(frag) if frag.GetNumConformers() else with_coords(frag)
-        parts.append((Chem.MolToV3KMolBlock(frag, kekulize=False), _smiles_or_none(frag)))
+        parts.append((Chem.MolToV3KMolBlock(frag, kekulize=False), smiles_or_none(frag)))
     return parts
 
 
-def _smiles_or_none(mol: Chem.Mol) -> str | None:
+def smiles_or_none(mol: Chem.Mol) -> str | None:
     try:
         m = Chem.Mol(mol)
         Chem.SanitizeMol(m)

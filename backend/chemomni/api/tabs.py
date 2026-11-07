@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from chemomni.chem.io import Imported, StructureFileError, TabContent, basename, parse_import, tab_content
 from chemomni.chem.layout import layout_smiles, split_molfile
 from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.db import ensure_default_workspace, get_session
@@ -99,6 +101,47 @@ async def post_tab(body: TabCreate, session: SessionDep) -> Tab:
         content_format=body.content_format,
         content=body.content,
         smiles=body.smiles,
+    )
+
+
+class ImportRequest(BaseModel):
+    filename: str = Field("", max_length=255)
+    text: str = Field(..., max_length=20_000_000, description="The file's text")
+
+
+class ImportResult(BaseModel):
+    tab: TabRead
+    imported: int
+    found: int  # structures in the file; more than `imported` when the cap applied
+    skipped: list[str]
+
+
+@router.post("/tabs/import", response_model=ImportResult, status_code=status.HTTP_201_CREATED)
+async def import_tab(body: ImportRequest, session: SessionDep) -> ImportResult:
+    """A new tab from a molfile, SDF, SMILES list or CSV. Several structures go on one grid (numbered by the client)."""
+
+    def _read() -> tuple[Imported, TabContent]:
+        imported = parse_import(body.filename, body.text)
+        return imported, tab_content(imported)
+
+    try:
+        imported, content = await run_in_threadpool(_read)
+    except StructureFileError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    ws = await _workspace(session)
+    tab = await create_tab(
+        session,
+        ws.id,
+        name=Path(basename(body.filename)).stem,
+        content_format="mol",
+        content=content.molfile,
+        smiles=content.smiles,
+    )
+    return ImportResult(
+        tab=TabRead.model_validate(tab),
+        imported=len(imported.structures),
+        found=imported.found,
+        skipped=imported.skipped,
     )
 
 

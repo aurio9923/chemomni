@@ -2,7 +2,7 @@
 
 A chemical structure workspace that puts a ChemDraw-like editor ([Ketcher](https://github.com/epam/ketcher)) first and an LLM chat beside it. The AI computes properties, explains structures, edits them from natural language and proposes analogs — and its results land in the editor as new tabs.
 
-**Status:** M4 in progress: compound references are in (number your structures, then say "compound 1"); import/export is next, then bioisostere transformations. Docker packaging and performance tuning are deferred.
+**Status:** M4 is done: compound references (number your structures, then say "compound 1") and file import/export. Bioisostere transformations are next. Docker packaging and performance tuning are deferred.
 
 ## What it does
 
@@ -11,6 +11,7 @@ A chemical structure workspace that puts a ChemDraw-like editor ([Ketcher](https
 - Edits in natural language (“add a fluorine para to the ester”), laid out on your own drawing, in a new tab or in place with Undo. Select atoms in the editor to point at them.
 - Part-of-molecule changes: select a substructure (say a phenyl) and ask for a pyridine or a mono-fluorination. Several changes can be combined (one F and one methyl, difluoro). Every position and combination is enumerated with RDKit (not guessed by the model), symmetric ones are merged, ortho/meta/para is named, and all variants open on one grid tab.
 - Numbered compounds: write 1, 2, 3 … next to your structures with Ketcher's text tool (or press *Number compounds*), then say "use compound 1 as the query and search the others". The query is the drawing itself, including any-atom and atom-list atoms, so the model never writes SMARTS; numbers also work as arguments for properties, similarity and edits instead of copied SMILES, and an edit of several numbered compounds can be collected on one tab, each result drawn like its own source.
+- Import and export: the import button opens SDF, molfile, SMILES list, CSV (with a `smiles` column), KET and CDXML files as new tabs. A file with several structures lands on one grid tab and is numbered 1, 2, 3 …, so "compound 3" works at once (Ketcher's own Open dialog stacks the records of an SDF on top of each other). The export button writes the active tab as SDF, CSV or a SMILES list with properties and the compound numbers; Ketcher's *Save as* still covers the structure formats (Molfile, KET, CDXML, InChI, SVG, PNG …).
 - Proposals: the AI designs candidates, RDKit validates and deduplicates them, and they open together on one grid tab aligned to the parent, with a sortable table of properties and similarity. Split any multi-molecule tab into one tab per molecule.
 - Names to structures: OPSIN offline when installed, then PubChem.
 - Models: OpenAI (Responses API), Anthropic Claude, or any OpenAI-compatible server (Ollama, vLLM), switchable from the chat header.

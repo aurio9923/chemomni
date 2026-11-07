@@ -16,6 +16,22 @@ export interface Tab {
   updated_at: string
 }
 
+export interface ImportResult {
+  tab: Tab
+  imported: number
+  /** Structures in the file; more than `imported` when the server capped the import. */
+  found: number
+  skipped: string[]
+}
+
+export interface ExportResult {
+  filename: string
+  mime: string
+  content: string
+  count: number
+  skipped: string[]
+}
+
 export interface Workspace {
   id: string
   name: string

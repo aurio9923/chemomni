@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 import * as ketcher from '../ketcher/bridge'
 import { ApiError, api } from '../lib/api'
+import { basename, countKetMolecules, downloadText, importRoute, stem } from '../lib/files'
 import type { Tab } from '../lib/types'
 import { useToast } from './toast'
 
@@ -27,6 +28,10 @@ interface WorkspaceState {
   splitTab: (id: string) => Promise<void>
   /** Write a number under every structure of the active tab that has none. */
   numberCompounds: () => Promise<void>
+  /** A new tab from a structure file: SDF, molfile, SMILES list, CSV (read by the server), KET, CDXML, RXN (by Ketcher). */
+  importFile: (file: File) => Promise<void>
+  /** Download the active tab's structures with properties and compound numbers. */
+  exportTab: (format: 'sdf' | 'csv' | 'smi') => Promise<void>
   renameTab: (id: string, name: string) => Promise<void>
   openStructures: (name: string, items: { molfile: string | null; smiles: string }[]) => Promise<void>
   setConversation: (id: string) => void
@@ -44,6 +49,22 @@ let saveChain: Promise<void> = Promise.resolve()
 
 export const useWorkspace = create<WorkspaceState>((set, get) => {
   const patchTab = (tab: Tab) => set((s) => ({ tabs: s.tabs.map((t) => (t.id === tab.id ? tab : t)) }))
+
+  /**
+   * Write a number under every structure of the active editor document that has none; returns the labels.
+   * `expected` is the number of molecules a fresh load should show: Ketcher can still report an empty
+   * document for a moment after setMolecule, so wait for them instead of numbering nothing.
+   */
+  const numberActive = async (expected = 0): Promise<string[]> => {
+    let ket = await ketcher.getKet()
+    for (let attempt = 0; attempt < 5 && countKetMolecules(ket) < expected; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      ket = await ketcher.getKet()
+    }
+    const { ket: numbered, added } = await api.numberCompounds(ket)
+    if (added.length > 0) await ketcher.setKet(numbered)
+    return added
+  }
 
   /** Save the editor's current document into the active tab (serialized per app). */
   const saveActive = (): Promise<void> => {
@@ -162,18 +183,84 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
     },
 
     numberCompounds: async () => {
-      const ket = await ketcher.getKet()
-      const { ket: numbered, added } = await api.numberCompounds(ket)
+      const added = await numberActive()
       const toast = useToast.getState()
       if (added.length === 0) {
         toast.show('Every structure already has a number (or the editor is empty).')
         return
       }
-      await ketcher.setKet(numbered)
       toast.show(`Numbered ${added.length} structure${added.length > 1 ? 's' : ''}: ${added.join(', ')}.`, {
         label: 'Undo',
         run: () => void ketcher.undo(),
       })
+    },
+
+    importFile: async (file) => {
+      const toast = useToast.getState()
+      const name = basename(file.name)
+      const route = importRoute(file.name)
+      if (route === 'unsupported') {
+        toast.show(`${name}: this file type is not supported. Use .sdf, .mol, .smi, .csv, .ket or .cdxml.`)
+        return
+      }
+      try {
+        const text = await file.text()
+        if (route === 'ketcher') {
+          const tab = await api.createTab({ name: stem(file.name) })
+          set((s) => ({ tabs: [...s.tabs, tab] }))
+          await get().activate(tab.id)
+          try {
+            await ketcher.setStructure(text)
+          } catch {
+            await get().closeTab(tab.id)
+            toast.show(`Ketcher could not read ${name}.`)
+            return
+          }
+          toast.show(`Opened ${name} in a new tab.`)
+          return
+        }
+        const result = await api.importFile(file.name, text)
+        set((s) => ({ tabs: [...s.tabs, result.tab] }))
+        await get().activate(result.tab.id)
+        // several structures arrive on a grid: number them, so "compound 3" works right away
+        const added = result.imported > 1 ? await numberActive(result.imported) : []
+        let message = `Imported ${result.imported} structure${result.imported === 1 ? '' : 's'} from ${name}`
+        if (added.length > 0) message += `, numbered ${added[0]}–${added[added.length - 1]}`
+        message += '.'
+        if (result.skipped.length > 0) {
+          const more = result.skipped.length > 1 ? ` (+${result.skipped.length - 1} more)` : ''
+          message += ` Note: ${result.skipped[0]}${more}.`
+        }
+        toast.show(
+          message,
+          added.length > 0 ? { label: 'Remove numbers', run: () => void ketcher.undo() } : undefined,
+          result.skipped.length > 0 ? 15000 : undefined,
+        )
+      } catch (e) {
+        const detail = e instanceof ApiError && typeof e.detail === 'string' ? `: ${e.detail}` : ''
+        toast.show(`Could not import ${name}${detail}`)
+      }
+    },
+
+    exportTab: async (format) => {
+      const toast = useToast.getState()
+      const tab = get().tabs.find((t) => t.id === get().activeTabId)
+      if (!tab) return
+      const molfile = await ketcher.getMolfileV3000()
+      if (!molfile) {
+        toast.show('Nothing to export: the editor is empty or holds a reaction.')
+        return
+      }
+      const ket = await ketcher.getKet().catch(() => null)
+      try {
+        const result = await api.exportStructures({ format, molfile, ket, name: tab.name })
+        downloadText(result.filename, result.mime, result.content)
+        let message = `Exported ${result.count} structure${result.count === 1 ? '' : 's'} to ${result.filename}.`
+        if (result.skipped.length > 0) message += ` Not exported: ${result.skipped.join('; ')}.`
+        toast.show(message, undefined, result.skipped.length > 0 ? 15000 : undefined)
+      } catch (e) {
+        toast.show(e instanceof ApiError && typeof e.detail === 'string' ? e.detail : 'Export failed.')
+      }
     },
 
     renameTab: async (id, name) => {
