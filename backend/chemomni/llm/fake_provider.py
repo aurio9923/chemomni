@@ -47,12 +47,18 @@ class FakeProvider:
         """Keywords in the user's message pick a tool: 'pyridine' / 'fluor' scan the selection, 'analog'
         proposes a series, 'replace' / 'methyl' edit the first molecule, 'highlight' selects atom 1,
         'bioisostere' looks for rules and applies the first three that fit (to the selection or the only
-        molecule), anything else computes properties."""
+        molecule), 'tautomer' lists the tautomers (or the canonical one with 'canonical'), anything else
+        computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
             result = json.loads(last["content"])
             if not result.get("ok"):
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "tautomer_count" in result:  # tautomers
+                shown = len(result.get("accepted", []))
+                return [
+                    {"text": f"{result['tautomer_count']} tautomer(s); canonical {result['canonical']}; {shown} shown."}
+                ]
             if "distinct_products" in result:  # apply_bioisosteres
                 return [
                     {
@@ -105,6 +111,11 @@ class FakeProvider:
         ref = re.search(r"(?:compound|化合物)\s*(\d+[a-z]?)", text)
         if ref and ("substructure" in text or "部分構造" in text):  # the numbered drawing is the query
             return [{"tool": "substructure_search", "args": {"query_ref": ref.group(1)}}]
+        if "tautomer" in text or "互変異性" in text or "トートマー" in text:
+            args = {"ref": ref.group(1)} if ref else {}
+            if "canonical" in text or "正準" in text or "カノニカル" in text:
+                args["show"] = "canonical"
+            return [{"tool": "tautomers", "args": args}]
         if "bioisoster" in text or "バイオアイソスター" in text:
             args = {"ref": ref.group(1)} if ref else {}
             if "acid" in text or "カルボン酸" in text:

@@ -37,6 +37,14 @@ give at most one line per point from the rules' risk notes, which are qualitativ
 potency or other numbers from memory. When `new_stereocentre_unspecified` is listed, say those products \
 are drawn without stereochemistry. When `not_shown` is set, say how many more there are and how to \
 narrow. A rule that fits is a starting point, not a recommendation.
+- Tautomers: when the user asks for the tautomers of a molecule, its canonical tautomer, or whether two \
+drawings are the same compound, call `tautomers` (a numbered compound as `ref`, otherwise the selection or the \
+only molecule on the tab; show='canonical' when only the canonical form is wanted; to compare two drawings \
+call it for each with show='none' and compare `canonical`). Never write a tautomer's \
+SMILES yourself. The canonical tautomer is RDKit's consistent label for comparing and merging structures, not \
+a prediction of the form that predominates in water or in the target: never say it is the "real" or the \
+"most stable" one. When `complete` is false, say that the list is partial; when `not_shown` is set, say how \
+many more there are. Stereochemistry and charge are left as drawn.
 - Generating: when the user asks for analogs, a series or ideas, design the molecules yourself and \
 send them all in one `propose_structures` call, each with a short rationale, with the parent exactly \
 as it appears on the active tab. Give as many as the user asked for (default 5, at most 20) and vary \

@@ -211,6 +211,17 @@ async for chunk in stream:
   aromatic atoms (3 connections) are not positions for an element swap. For a swap the grid layout uses
   `align(..., any_element=True)` (topology-only MCS) so the ring keeps the parent's drawing and only the
   changed atom is highlighted. All generating tools end in `present_candidates()` (validate, grid tab, card).
+- Tautomers (PLAN Q63, `chem/tautomers.py`, tool `tautomers`): `rdMolStandardize.TautomerEnumerator` with
+  `SetRemoveSp3Stereo(False)` and `SetRemoveBondStereo(False)`. With RDKit's defaults the canonical tautomer of
+  (S)-ibuprofen, L-alanine or (S)-thalidomide has lost its stereocentre (`tests/test_tautomers.py` keeps a control that
+  shows it). The charge state is left alone (tautomers, not protomers); a salt is refused. Enumeration is bounded: the
+  transform limit (1000) and a 5 s deadline through a `TautomerEnumeratorCallback` subclass (keep a reference to the
+  callback object); `result.status` other than `Completed` means a partial list. `PickCanonical(result)` saves a second
+  enumeration. The canonical tautomer is a scoring-based label, not the predominant form: barbituric acid's is an aromatic
+  enol. The grid highlight for tautomers cannot use an element comparison (same heavy-atom skeleton): `align(...,
+  bond_changes=True)` matches by topology and marks atoms whose H count, charge or bond types differ, choosing among
+  equal mappings the one that changes the fewest atoms. In a multi-turn FakeProvider test, `provider.calls[i]["messages"]`
+  is one shared list, so read all tool results from `provider.calls[-1]["messages"]`, not `[-1]` of an earlier call.
 - `split_molfile` does not sanitize (explicit H and odd valences survive). KET tabs cannot be read by
   RDKit: the client sends the editor's molfile with `POST /api/tabs/{id}/split`.
 - Names: `chem/names.py` tries OPSIN (`uv sync --extra opsin`, needs Java; `py2opsin` returns `""`

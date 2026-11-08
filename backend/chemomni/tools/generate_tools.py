@@ -120,11 +120,18 @@ async def present_candidates(
     molfile: str | None = None,
     skipped: list[dict[str, str]] | None = None,
     any_element: bool = False,
+    bond_changes: bool = False,
 ) -> ToolResult:
     """Validate candidates, open them on a grid tab, show the card; shared by every generating tool."""
     active = ctx.snapshot.get("active_tab") or {}
     result: Evaluation = await run_in_threadpool(
-        lambda: evaluate(parent_smiles, pairs, molfile or active.get("molfile"), any_element=any_element)
+        lambda: evaluate(
+            parent_smiles,
+            pairs,
+            molfile or active.get("molfile"),
+            any_element=any_element,
+            bond_changes=bond_changes,
+        )
     )
     rejected = [*result.rejected, *(skipped or [])]
     if not result.ok:
