@@ -47,7 +47,8 @@ class FakeProvider:
         """Keywords in the user's message pick a tool: 'pyridine' / 'fluor' scan the selection, 'analog'
         proposes a series, 'replace' / 'methyl' edit the first molecule, 'highlight' selects atom 1,
         'bioisostere' looks for rules and applies the first three that fit (to the selection or the only
-        molecule), 'tautomer' lists the tautomers (or the canonical one with 'canonical'), anything else
+        molecule), 'tautomer' lists the tautomers (the canonical one with 'canonical', the hidden forms too
+        with 'every form'), anything else
         computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
@@ -56,8 +57,12 @@ class FakeProvider:
                 return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
             if "tautomer_count" in result:  # tautomers
                 shown = len(result.get("accepted", []))
+                hidden = result.get("hidden", {}).get("count", 0)
                 return [
-                    {"text": f"{result['tautomer_count']} tautomer(s); canonical {result['canonical']}; {shown} shown."}
+                    {
+                        "text": f"{result['tautomer_count']} tautomer(s); canonical {result['canonical']}; "
+                        f"{shown} shown" + (f", {hidden} hidden." if hidden else ".")
+                    }
                 ]
             if "distinct_products" in result:  # apply_bioisosteres
                 return [
@@ -115,6 +120,8 @@ class FakeProvider:
             args = {"ref": ref.group(1)} if ref else {}
             if "canonical" in text or "正準" in text or "カノニカル" in text:
                 args["show"] = "canonical"
+            if "every form" in text or "all forms" in text or "すべての形" in text:
+                args["all_forms"] = True
             return [{"tool": "tautomers", "args": args}]
         if "bioisoster" in text or "バイオアイソスター" in text:
             args = {"ref": ref.group(1)} if ref else {}

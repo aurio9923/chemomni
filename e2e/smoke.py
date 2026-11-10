@@ -420,6 +420,18 @@ def main() -> None:
         send("what is the canonical tautomer of this?")  # the tab shows it already: nothing new opens
         assert tabs.count() == n_tabs
 
+        # ---- unfavoured tautomers (Q64): the lactim of oxindole is left off the grid and counted ----
+        page.get_by_role("button", name="New tab", exact=True).click()
+        page.wait_for_timeout(300)
+        set_structure(page, "O=C1Cc2ccccc2N1")
+        expect(page.get_by_test_id("property-bar")).to_contain_text("C8H7NO", timeout=5_000)
+        page.wait_for_timeout(800)  # autosave
+        n_tabs, n_messages = tabs.count(), page.get_by_test_id("assistant-message").count()
+        send("show me the tautomers")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(page.get_by_test_id("artifact-grid").last.get_by_test_id("grid-card")).to_have_count(1)
+        expect(page.get_by_test_id("assistant-message").nth(n_messages)).to_contain_text("1 shown, 1 hidden.")
+
         # ---- M4: number the structures, then refer to them ----
         page.get_by_role("button", name="New tab", exact=True).click()
         page.wait_for_timeout(300)

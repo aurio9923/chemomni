@@ -1,7 +1,8 @@
-"""Tautomers of a molecule and its canonical tautomer (decision Q63).
+"""Tautomers of a molecule and its canonical tautomer (decisions Q63 and Q64).
 
 RDKit enumerates; the model only says which molecule and whether the user wants the list or just the
-canonical form. The model never writes a tautomer's SMILES.
+canonical form. The model never writes a tautomer's SMILES. Forms no chemist would draw (see
+``chem/tautomers.py``) are left off the list and counted in ``hidden``, unless ``all_forms`` is set.
 """
 
 from __future__ import annotations
@@ -38,6 +39,12 @@ class TautomersIn(BaseModel):
         description="'all' opens every tautomer on a grid tab (the canonical one is labelled). 'canonical' "
         "opens only the canonical tautomer, and only when it differs from the drawn form. 'none' opens no tab "
         "and only reports the canonical form: use it to compare molecules.",
+    )
+    all_forms: bool = Field(
+        False,
+        description="Leave it false. True also lists the unfavoured forms that are hidden by default (a ring "
+        "that loses its aromaticity, an amide written as C(OH)=N or as an enol): only when the user asks for "
+        "every form or for the hidden ones.",
     )
     title: str = Field("Tautomers", max_length=60, description="Short tab name, e.g. 'Tautomers of 3'.")
 
@@ -78,7 +85,15 @@ def _summary(r: ToolResult) -> str:
     if r.get("is_canonical") and not r.get("accepted"):
         return "already canonical"
     shown = len(r.get("accepted", []))
-    return f"{shown} tautomer(s)" + (f" of {r['tautomer_count'] - 1}" if r["tautomer_count"] - 1 > shown else "")
+    hidden = r.get("hidden", {}).get("count", 0)
+    if not shown and hidden:
+        return f"no reasonable tautomer ({hidden} hidden)"
+    rest = r["tautomer_count"] - 1 - hidden
+    return f"{shown} tautomer(s)" + (f" of {rest}" if rest > shown else "") + (f", {hidden} hidden" if hidden else "")
+
+
+def _why(reasons: tuple[str, ...]) -> str:
+    return "; ".join(taut.UNFAVOURED_WHY[r] for r in reasons)
 
 
 @tool(
@@ -92,7 +107,10 @@ def _summary(r: ToolResult) -> str:
         "show='canonical' only the canonical one is, and only if it differs from the drawing; show='none' opens "
         "no tab. To tell whether two drawings are one compound, call it for each with show='none' and compare "
         "the canonical SMILES. The result gives the canonical SMILES, how many tautomers there are and whether "
-        "the search was complete. Stereochemistry "
+        "the search was complete. RDKit also generates forms no chemist would draw: a ring that loses its "
+        "aromaticity (phenol as a cyclohexadienone), an amide, lactam or urea written as C(OH)=N, an amide, "
+        "acid or ester written as its enol. They are left off the list and counted in `hidden`; "
+        "all_forms=true lists them too. Stereochemistry "
         "is kept and the charge state is not changed. The canonical tautomer is RDKit's consistent choice, "
         "useful for comparing and merging structures; it is not a prediction of which tautomer predominates "
         "in water or in a protein, so do not say that it is. Never write a tautomer's SMILES yourself."
@@ -127,17 +145,37 @@ async def tautomers_tool(args: TautomersIn, ctx: ToolContext) -> ToolResult:
     if not found.others:
         result["note"] = "RDKit finds no other tautomer of this molecule"
         return result
+    if found.canonical in found.unfavoured:  # e.g. a hydroxamic acid, whose canonical form is C(OH)=N-OH
+        result["canonical_is_unfavoured"] = _why(found.unfavoured[found.canonical])
+    hidden = {} if args.all_forms else found.unfavoured
+    if hidden:
+        result["hidden"] = {
+            "count": len(hidden),
+            "why": {taut.UNFAVOURED_WHY[k]: n for k, n in found.hidden_by_reason().items()},
+            "to_see_them": "call again with all_forms=true",
+        }
 
     if args.show == "none":
         result["note"] = "no tab opened (show='none'); compare `canonical` between molecules"
         return result
-    wanted = found.others if args.show == "all" else ([] if found.is_canonical else [found.canonical])
-    if not wanted:
-        result["note"] = "the drawn form is already the canonical tautomer"
-        return result
+    if args.show == "all":
+        wanted = [s for s in found.others if s not in hidden]
+        if not wanted:
+            result["note"] = "every other form RDKit generates is an unfavoured one (see `hidden`): no tab opened"
+            return result
+    else:  # the canonical form is what was asked for, favoured or not
+        result.pop("hidden", None)
+        wanted = [] if found.is_canonical else [found.canonical]
+        if not wanted:
+            result["note"] = "the drawn form is already the canonical tautomer"
+            return result
     shown = wanted[:MAX_SHOWN]
     pairs = [
-        (s, "canonical tautomer" if s == found.canonical else f"tautomer {i} of {len(found.others)}")
+        (
+            s,
+            ("canonical tautomer" if s == found.canonical else f"tautomer {i} of {len(wanted)}")
+            + (f" (unfavoured: {_why(found.unfavoured[s])})" if s in found.unfavoured else ""),
+        )
         for i, s in enumerate(shown, start=1)
     ]
     presented = await present_candidates(

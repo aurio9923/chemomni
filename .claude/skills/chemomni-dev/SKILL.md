@@ -222,6 +222,15 @@ async for chunk in stream:
   bond_changes=True)` matches by topology and marks atoms whose H count, charge or bond types differ, choosing among
   equal mappings the one that changes the fewest atoms. In a multi-turn FakeProvider test, `provider.calls[i]["messages"]`
   is one shared list, so read all tool results from `provider.calls[-1]["messages"]`, not `[-1]` of an earlier call.
+- Unfavoured tautomers (PLAN Q64): RDKit's enumerator returns every form its H-shift rules reach, including ones no
+  chemist draws. `unfavoured_reasons(drawn, tautomer)` marks them: a ring aromatic in the drawing that is not aromatic
+  in the tautomer (checked ring by ring on the ring's bonds; the enumerator keeps the atom order, so indices can be
+  compared), and groups in `UNFAVOURED_GROUPS` that the tautomer has more of than the drawing (imidic acid C(OH)=N,
+  enol of an acid derivative, C(OH)-N=O of a hydroxamic acid; the carbon is `!a`, so 2-hydroxypyridine stays). Do not
+  compare the number of aromatic rings with the canonical form: that hides the enols of cyclic 1,3-diketones and
+  tetramic acids. The canonical tautomer can itself be unfavoured (hydroxamic acids: RDKit scores C(OH)=N-OH highest).
+  To add a class, add one SMARTS and one sentence, plus a hand-written case and a neighbour that must stay in
+  `tests/test_tautomers.py`.
 - `split_molfile` does not sanitize (explicit H and odd valences survive). KET tabs cannot be read by
   RDKit: the client sends the editor's molfile with `POST /api/tabs/{id}/split`.
 - Names: `chem/names.py` tries OPSIN (`uv sync --extra opsin`, needs Java; `py2opsin` returns `""`
