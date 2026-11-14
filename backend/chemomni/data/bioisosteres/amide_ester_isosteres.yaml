@@ -1,0 +1,592 @@
+- id: amide_to_oxadiazole_three_five
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 3,5-disubstituted 1,2,4-oxadiazole"]
+    ja: ["二級アミド -> オキサジアゾール（カルボニル側が五位）"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1nc([#6:2])no1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドを非対称なオキサジアゾール環に置き換える。三級アミドやラクタム、ウレアには一致しない"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "アミドの水素結合供与能が失われるため、供与体として働く結合様式では活性が低下しやすい"
+      confidence: high
+    - topic: metabolism
+      note: "アミダーゼによる加水分解は回避できるが、複素環の還元的開環を受けることがある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["Cc1nc(c2ccc(O)cc2)no1"]
+        note: "アセトアミノフェン"
+      - parent: "CN1C=NC2=C1C(=O)N(C(=O)N2C)CC(=O)Nc1ccccc1"
+        products: ["Cn1cnc2c1c(=O)n(Cc1nc(-c3ccccc3)no1)c(=O)n2C"]
+        note: "テオフィリン酢酸アニリド誘導体"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3nc(c4ccccc4)no3)cc2)cc1"
+          - "Cc1ccc(c2noc(c3ccc(C(=O)Nc4ccccc4)cc3)n2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CN(C)C(=O)Cc1ccccc1"
+        note: "三級アミド"
+      - parent: "O=C1CCCN1CC(=O)N"
+        note: "ピラセタム（ラクタムと一級アミド）"
+
+- id: amide_to_oxadiazole_five_three
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 5,3-disubstituted 1,2,4-oxadiazole"]
+    ja: ["二級アミド -> オキサジアゾール（カルボニル側が三位）"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1nc([#6:2])on1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドを逆向きの非対称オキサジアゾール環に置き換える。三級アミドやラクタムには一致しない"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "アミドの水素結合供与能が失われ、双極子の向きも位置異性体と異なるため標的との相性に影響する"
+      confidence: high
+    - topic: lipophilicity
+      note: "元の二級アミドより極性が下がり、脂溶性が上がることがある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["Cc1nc(c2ccc(O)cc2)on1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3nc(c4ccccc4)on3)cc2)cc1"
+          - "Cc1ccc(c2onc(c3ccc(C(=O)Nc4ccccc4)cc3)n2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CCOC(=O)Nc1ccccc1"
+        note: "カルバメート"
+
+- id: amide_to_sym_oxadiazole
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 2,5-disubstituted 1,3,4-oxadiazole"]
+    ja: ["二級アミド -> 対称型オキサジアゾール"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1nnc([#6:2])o1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドを対称型のオキサジアゾール環に置き換える。代謝安定性や脂溶性バランスの改善に頻用される"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "水素結合供与能が消失するため、アミド水素が結合に必須な場合は活性が低下する"
+      confidence: high
+    - topic: solubility
+      note: "平面性が増すことで結晶性が高まり、水溶性が低下することがある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(OCC(O)CNC(C)C)cc1"
+        products: ["CC(C)NCC(O)COc1ccc(c2nnc(C)o2)cc1"]
+        note: "プラクトロール"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3nnc(c4ccccc4)o3)cc2)cc1"
+          - "Cc1ccc(c2nnc(c3ccc(C(=O)Nc4ccccc4)cc3)o2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "O=C(Nc1ccccc1)Nc1ccccc1"
+        note: "ジフェニルウレア"
+
+- id: amide_to_click_triazole
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 1,4-disubstituted 1,2,3-triazole"]
+    ja: ["二級アミド -> トリアゾール（クリック型）"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1cn([#6:2])nn1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドをトリアゾール環に置き換える。トランス型アミドの双極子と配置を模倣する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "水素結合供与体はメチン水素の弱い分極に限られ、強い供与能が必要な部位では活性が落ちることがある"
+      confidence: medium
+    - topic: metabolism
+      note: "孤立電子対を持つ窒素原子がシトクロム酵素のヘム鉄に配位し、酵素阻害を示すことがある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["Cc1cn(c2ccc(O)cc2)nn1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3cn(c4ccccc4)nn3)cc2)cc1"
+          - "Cc1ccc(n2cc(c3ccc(C(=O)Nc4ccccc4)cc3)nn2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CN(C(=O)c1ccccc1)c1ccccc1"
+        note: "三級ベンズアミド"
+
+- id: amide_to_nh_triazole
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 3,5-disubstituted 1,2,4-triazole"]
+    ja: ["二級アミド -> トリアゾール（水素結合供与型）"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1nc([#6:2])[nH]n1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドを水素結合供与能と受容能の両方を残すトリアゾール環に置き換える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "極性表面積が大きく、受動拡散による細胞膜透過が低下することがある"
+      confidence: medium
+    - topic: metabolism
+      note: "環内の窒素原子が代謝酵素のヘム鉄と相互作用する懸念がある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["Cc1nc(c2ccc(O)cc2)[nH]n1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3nc(c4ccccc4)[nH]n3)cc2)cc1"
+          - "Cc1ccc(c2nc(c3ccc(C(=O)Nc4ccccc4)cc3)[nH]n2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CC(=O)OC(C)C"
+        note: "酢酸イソプロピル（エステル）"
+
+- id: amide_to_imidazole
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> 2,4-disubstituted 1H-imidazole"]
+    ja: ["二級アミド -> イミダゾール"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]c1cnc([#6:2])[nH]1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドをイミダゾール環に置き換える。水素結合供与能と受容能の両方を維持する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: ionization
+      note: "中性のアミドと異なり弱塩基性を示すため、生理的条件で一部プロトン化することがある"
+      confidence: high
+    - topic: metabolism
+      note: "イミダゾール環窒素がシトクロム酵素を阻害することがある"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["Cc1cnc(c2ccc(O)cc2)[nH]1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(c3cnc(c4ccccc4)[nH]3)cc2)cc1"
+          - "Cc1ccc(c2nc(c3ccc(C(=O)Nc4ccccc4)cc3)c[nH]2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "O=C1CCCCC1"
+        note: "シクロヘキサノン（ケトン）"
+
+- id: amide_to_trans_alkene
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> alkene", "amide -> olefin isostere"]
+    ja: ["二級アミド -> アルケン"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]C=C[#6:2]"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドを炭素二重結合に置き換える。アミドの平面性と結合距離を模倣しつつ極性を除く"
+  creates_stereocenter: false
+  net_heavy_atom_change: -1
+  status: excluded
+  review:
+    decision: rejected
+    date: "2026-11-07"
+    note: "通常、この変換は使わない。"
+  risks:
+    - topic: potency_risk
+      note: "水素結合供与能と受容能がともに失われ、双極子モーメントも大幅に小さくなる"
+      confidence: high
+    - topic: lipophilicity
+      note: "脂溶性が大きく上昇し、水溶性の低下や酸化的代謝の増加を招くことがある"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC=Cc1ccc(O)cc1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(C=Cc3ccccc3)cc2)cc1"
+          - "Cc1ccc(C=Cc2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CN(C)C(=O)c1ccccc1"
+        note: "ジメチルベンズアミド（三級アミド）"
+
+- id: amide_to_fluoroalkene
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> fluoroalkene", "CONH -> CF=CH"]
+    ja: ["二級アミド -> フルオロアルケン"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]C(F)=C[#6:2]"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドをフルオロアルケンに置き換える。無置換アルケンに欠ける双極子モーメントをフッ素で補う"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: excluded
+  review:
+    decision: rejected
+    date: "2026-11-07"
+    note: "通常、この変換は使わない。"
+  risks:
+    - topic: synthesis
+      note: "立体選択的なフルオロアルケン構築の合成難度が高く、誘導体展開に手間がかかる"
+      confidence: high
+    - topic: potency_risk
+      note: "カルボニル酸素に比べてフッ素の水素結合受容能は弱く、強い水素結合は代替しにくい"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(F)=Cc1ccc(O)cc1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(C(F)=Cc3ccccc3)cc2)cc1"
+          - "Cc1ccc(C=C(F)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CC(=O)Oc1ccccc1"
+        note: "酢酸フェニル（エステル）"
+
+- id: amide_to_trifluoroethylamine
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> trifluoroethylamine", "CONH -> CH(CF3)NH"]
+    ja: ["二級アミド -> トリフルオロエチルアミン"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]C(C(F)(F)F)N[#6:2]"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドをトリフルオロエチルアミンに置き換える。電子求引性によりアミンの塩基性を抑えつつ水素結合供与能を保つ"
+  creates_stereocenter: true
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "平面のアミドから四面体型炭素へ折れ曲がるため、立体配座と結合角が変化し、新たな不斉中心も生じる"
+      confidence: high
+    - topic: lipophilicity
+      note: "トリフルオロメチル基の導入により脂溶性が上昇する"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)C[C@H](NC(=O)c1ccccc1)C(=O)NCC#N"
+        products:
+          - "CC(C)C[C@H](NC(c1ccccc1)C(F)(F)F)C(=O)NCC#N"
+          - "CC(C)C[C@H](NC(=O)c1ccccc1)C(NCC#N)C(F)(F)F"
+        note: "カテプシン阻害薬骨格（オダナカチブ型変換、二箇所の二級アミド）"
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(Nc1ccc(O)cc1)C(F)(F)F"]
+        note: "アセトアミノフェン"
+    negative:
+      - parent: "O=C1CCCN1c1ccccc1"
+        note: "フェニルピロリジノン（ラクタム）"
+
+- id: amide_to_thioamide
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> thioamide", "CONH -> CSNH"]
+    ja: ["二級アミド -> チオアミド"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]C(=S)N[#6:2]"
+  attachments: 2
+  class: classical
+  context: "鎖状の二級カルボン酸アミドをチオアミドに置き換える。水素結合供与能を強めたいときやプロテアーゼ耐性を付与したいときに使われる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: toxicity_alert
+      note: "チオカルボニル基が酸化的代謝を受けて反応性中間体を生じ、肝毒性や酵素不活化を起こすことがある"
+      confidence: high
+    - topic: potency_risk
+      note: "酸素より硫黄の水素結合受容能が低く原子半径も大きいため、カルボニル受容体としての相互作用は弱まる"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=S)Nc1ccc(O)cc1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(C(=S)Nc3ccccc3)cc2)cc1"
+          - "Cc1ccc(NC(=S)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CC(=O)Oc1ccccc1"
+        note: "酢酸フェニル（エステル）"
+
+- id: amide_to_retro_amide
+  family: amide_ester_isosteres
+  names:
+    en: ["secondary amide -> reversed amide", "amide -> retro-amide"]
+    ja: ["二級アミド -> 逆アミド"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]NC(=O)[#6:2]"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状の二級カルボン酸アミドのカルボニルと窒素の向きを入れ替える。代謝によるアニリン遊離の回避や合成経路の変更に用いられる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "水素結合供与体と受容体の位置が入れ替わるため、標的タンパク質との水素結合ネットワークが崩れることがある"
+      confidence: high
+    - topic: metabolism
+      note: "加水分解された際に生じる代謝物の種類が入れ替わるため、新たにアニリン構造が生じる向きでは毒性に注意が要る"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCN(CC)CC(=O)Nc1c(C)cccc1C"
+        products: ["CCN(CC)CNC(=O)c1c(C)cccc1C"]
+        note: "リドカイン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(NC(=O)c3ccccc3)cc2)cc1"
+          - "Cc1ccc(C(=O)Nc2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CN(C)C(=O)c1ccccc1"
+        note: "三級アミド"
+
+- id: ester_to_oxadiazole_three_five
+  family: amide_ester_isosteres
+  names:
+    en: ["carboxylic ester -> 3,5-disubstituted 1,2,4-oxadiazole"]
+    ja: ["エステル -> オキサジアゾール（カルボニル側が五位）"]
+  reaction: "[#6:1][CX3R0](=O)[OX2R0][#6;!$(C=O):2]>>[#6:1]c1nc([#6:2])no1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のカルボン酸エステルをオキサジアゾール環に置き換える。エステラーゼによる加水分解を防ぎつつ水素結合受容能を維持する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "柔軟なエステル結合が剛直な芳香環に変わるため、配座の自由度が減り結合ポケットへの適合性が変わることがある"
+      confidence: medium
+    - topic: solubility
+      note: "平面的な芳香環の増加により結晶性が高まり、水溶性が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCOC(=O)c1ccc(N)cc1"
+        products: ["CCc1nc(c2ccc(N)cc2)on1"]
+        note: "ベンゾカイン"
+      - parent: "COC(=O)c1ccc(C(=O)OC)cc1"
+        products: ["COC(=O)c1ccc(c2nc(C)no2)cc1"]
+        note: "テレフタル酸ジメチル（二箇所のエステル）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（遊離のカルボン酸）"
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        note: "アセトアミノフェン（アミド）"
+
+- id: ester_to_sym_oxadiazole
+  family: amide_ester_isosteres
+  names:
+    en: ["carboxylic ester -> 2,5-disubstituted 1,3,4-oxadiazole"]
+    ja: ["エステル -> 対称型オキサジアゾール"]
+  reaction: "[#6:1][CX3R0](=O)[OX2R0][#6;!$(C=O):2]>>[#6:1]c1nnc([#6:2])o1"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のカルボン酸エステルを対称型のオキサジアゾール環に置き換える。加水分解への耐性と低い脂溶性を両立しやすい"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "エステルから五員芳香環への置き換えで置換基間の角度が変わり、受容体との立体的な噛み合わせがずれることがある"
+      confidence: medium
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCOC(=O)c1ccc(N)cc1"
+        products: ["CCc1nnc(c2ccc(N)cc2)o1"]
+        note: "ベンゾカイン"
+      - parent: "COC(=O)c1ccc(C(=O)OC)cc1"
+        products: ["COC(=O)c1ccc(c2nnc(C)o2)cc1"]
+        note: "テレフタル酸ジメチル（二箇所のエステル）"
+    negative:
+      - parent: "O=C1CCCO1"
+        note: "ブチロラクトン（環状エステル）"

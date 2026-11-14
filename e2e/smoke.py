@@ -377,6 +377,27 @@ def main() -> None:
             "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 10", polling=200, timeout=5_000
         )
 
+        # ---- M5: bioisosteres. The model picks rules by id; RDKit finds the places and builds the products ----
+        draw_and_select_phenyl("Cc1ccc(cc1)C(=O)O", "C8H8O2")  # the ring is selected, the acid is not
+        n_tabs = tabs.count()
+        n_messages = page.get_by_test_id("assistant-message").count()
+        send("acid bioisosteres please")
+        # only the part inside the selection can be replaced: no acid rule fits the ring
+        expect(page.get_by_test_id("assistant-message").nth(n_messages)).to_contain_text("No bioisostere rule fits.")
+        assert tabs.count() == n_tabs
+
+        page.evaluate("() => window.chemomniKetcher.editor.selection(null)")
+        send("give me bioisosteres of the carboxylic acid")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(active_tab).to_contain_text("Bioisosteres")
+        bio_grid = page.get_by_test_id("artifact-grid").last
+        expect(bio_grid.get_by_test_id("grid-card")).to_have_count(3)
+        for rule_id in ("cooh_to_tetrazole", "cooh_to_acyl_sulfonamide", "cooh_to_cyclopropyl_acyl_sulfonamide"):
+            expect(bio_grid).to_contain_text(rule_id)  # every row says which rule made it
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 3", polling=200, timeout=5_000
+        )
+
         # ---- M4: number the structures, then refer to them ----
         page.get_by_role("button", name="New tab", exact=True).click()
         page.wait_for_timeout(300)

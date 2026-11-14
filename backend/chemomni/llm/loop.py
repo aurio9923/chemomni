@@ -11,6 +11,7 @@ from typing import Any
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+import chemomni.tools.bioisostere_tools
 import chemomni.tools.chem_tools
 import chemomni.tools.edit_tools
 import chemomni.tools.generate_tools  # noqa: F401

@@ -1,0 +1,368 @@
+- id: phenol_to_indazole
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["4-substituted phenol -> 1H-indazol-5-yl", "phenol -> indazole"]
+    ja: ["パラ置換フェノール -> インダゾリル"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([OX2H1])[cH1R1][cH1R1]1>>[*:1]c1ccc2[nH]ncc2c1"
+  attachments: 1
+  class: nonclassical
+  context: "パラ置換フェノール環をインダゾール環に置き換える。水素結合供与能と受容能を保ちながら、フェノール性水酸基の抱合代謝を回避する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "単環から二環式芳香環へ分子サイズが大きくなるため、結合ポケットに立体的な余裕が必要になる"
+      confidence: high
+    - topic: ionization
+      note: "フェノールより酸性が弱く、生理的条件では電離しにくい"
+      confidence: medium
+  refs:
+    - authors: "Luken J, Goerges G, Ritter N, Disse P, Schreiber JA, Schmidt J, Frehland B, Schepmann D, Seebohm G, Wunsch B"
+      year: 2023
+      journal: "Journal of Medicinal Chemistry"
+      title: "Indazole as a Phenol Bioisostere: Structure-Affinity Relationships of GluN2B-Selective NMDA Receptor Antagonists"
+      doi: "10.1021/acs.jmedchem.3c01161"
+      verified: true
+    - authors: "Dunker C, Schlegel K, Junker A"
+      year: 2025
+      journal: "Archiv der Pharmazie"
+      title: "Phenol (bio)isosteres in drug design and development"
+      doi: "10.1002/ardp.202400700"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=O)Nc1ccc2[nH]ncc2c1"]
+        note: "アセトアミノフェン"
+      - parent: "CC(C(c1ccc(O)cc1)O)N1CCC(Cc2ccccc2)CC1"
+        products: ["CC(N1CCC(Cc2ccccc2)CC1)C(O)c1ccc2[nH]ncc2c1"]
+        note: "イフェンプロジル"
+      - parent: "Oc1ccc(Cc2ccc(O)cc2)cc1"
+        products: ["Oc1ccc(Cc2ccc3[nH]ncc3c2)cc1"]
+        note: "ビスフェノールメタン（二箇所のパラ置換フェノール）"
+    negative:
+      - parent: "COc1ccc(NC(C)=O)cc1"
+        note: "メトキシアニリド（メチルエーテル）"
+      - parent: "CC(=O)Oc1ccccc1C(=O)O"
+        note: "アスピリン（エステル化フェノールかつオルト置換）"
+
+- id: phenol_to_benzimidazolone
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["4-substituted phenol -> benzimidazol-2-on-5-yl", "phenol -> benzimidazolone"]
+    ja: ["パラ置換フェノール -> ベンズイミダゾロニル"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([OX2H1])[cH1R1][cH1R1]1>>[*:1]c1ccc2[nH]c(=O)[nH]c2c1"
+  attachments: 1
+  class: nonclassical
+  context: "パラ置換フェノール環をベンズイミダゾロン環に置き換える。グルクロン酸抱合や硫酸抱合を防ぎ、強い水素結合形成能を維持する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "水素結合供与体と極性表面積が増えるため、膜透過性や中枢移行性が低下することがある"
+      confidence: high
+    - topic: solubility
+      note: "分子間の水素結合ネットワークが強まり、結晶性が高くなって水溶性が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Dunker C, Schlegel K, Junker A"
+      year: 2025
+      journal: "Archiv der Pharmazie"
+      title: "Phenol (bio)isosteres in drug design and development"
+      doi: "10.1002/ardp.202400700"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=O)Nc1ccc2[nH]c(=O)[nH]c2c1"]
+        note: "アセトアミノフェン"
+      - parent: "Oc1ccc(Cc2ccc(O)cc2)cc1"
+        products: ["O=c1[nH]c2ccc(Cc3ccc(O)cc3)cc2[nH]1"]
+        note: "ビスフェノールメタン（二箇所のパラ置換フェノール）"
+    negative:
+      - parent: "Oc1ccccc1Cl"
+        note: "オルトクロロフェノール（オルト置換）"
+
+- id: phenol_to_benzoxazolone
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["4-substituted phenol -> benzoxazol-2-on-6-yl", "phenol -> benzoxazolone"]
+    ja: ["パラ置換フェノール -> ベンゾオキサゾロニル"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([OX2H1])[cH1R1][cH1R1]1>>[*:1]c1ccc2oc(=O)[nH]c2c1"
+  attachments: 1
+  class: nonclassical
+  context: "パラ置換フェノール環をベンゾオキサゾロン環に置き換える。フェノールに近い酸性度と水素結合供与能を保ちつつ第二相抱合代謝を回避する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 3
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: metabolism
+      note: "環状カルバメート構造を持つため、強塩基性条件や一部のエステラーゼで開環を受けることがある"
+      confidence: medium
+    - topic: potency_risk
+      note: "二環式になるため、フェノール水酸基の周囲に立体的な空間が必要になる"
+      confidence: medium
+  refs:
+    - authors: "Dunker C, Schlegel K, Junker A"
+      year: 2025
+      journal: "Archiv der Pharmazie"
+      title: "Phenol (bio)isosteres in drug design and development"
+      doi: "10.1002/ardp.202400700"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=O)Nc1ccc2oc(=O)[nH]c2c1"]
+        note: "アセトアミノフェン"
+      - parent: "Oc1ccc(Cc2ccc(O)cc2)cc1"
+        products: ["O=c1[nH]c2cc(Cc3ccc(O)cc3)ccc2o1"]
+        note: "ビスフェノールメタン（二箇所のパラ置換フェノール）"
+    negative:
+      - parent: "Oc1cccc(O)c1"
+        note: "レゾルシノール（メタ二置換フェノール）"
+
+- id: phenol_to_indole
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["4-substituted phenol -> 1H-indol-5-yl", "phenol -> indole"]
+    ja: ["パラ置換フェノール -> インドリル"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([OX2H1])[cH1R1][cH1R1]1>>[*:1]c1ccc2[nH]ccc2c1"
+  attachments: 1
+  class: nonclassical
+  context: "パラ置換フェノール環をインドール環に置き換える。水素結合供与能を残したまま極性を下げ、抱合代謝を回避する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "フェノール酸素が持つ水素結合受容能は失われ、供与体としてのみ働くようになる"
+      confidence: high
+    - topic: toxicity_alert
+      note: "置換様式によってはインドール環が酸化されてイミノキノン様の反応性中間体を生じることがある"
+      confidence: medium
+  refs:
+    - authors: "Dunker C, Schlegel K, Junker A"
+      year: 2025
+      journal: "Archiv der Pharmazie"
+      title: "Phenol (bio)isosteres in drug design and development"
+      doi: "10.1002/ardp.202400700"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=O)Nc1ccc2[nH]ccc2c1"]
+        note: "アセトアミノフェン"
+      - parent: "Oc1ccc(Cc2ccc(O)cc2)cc1"
+        products: ["Oc1ccc(Cc2ccc3[nH]ccc3c2)cc1"]
+        note: "ビスフェノールメタン（二箇所のパラ置換フェノール）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（カルボン酸のみ）"
+
+- id: phenol_to_aryl_methylsulfonamide
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["phenolic OH -> methanesulfonamide", "Ar-OH -> Ar-NHSO2Me"]
+    ja: ["フェノール性水酸基 -> メタンスルホンアミド"]
+  reaction: "[c;!$(c=[O,S,N]);!$(c[n,o,s]):1][OX2H1]>>[c:1]NS(=O)(=O)C"
+  attachments: 1
+  class: nonclassical
+  context: "芳香環上のフェノール性水酸基をメタンスルホンアミド基に置き換える。同程度の酸性度と水素結合供与能を保ちつつフェノール抱合代謝を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 4
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "極性表面積と分子量が大きく増えるため、膜透過性や脳移行性が低下しやすい"
+      confidence: high
+    - topic: potency_risk
+      note: "水酸基に比べて立体的に大きくなるため、狭い水素結合ポケットには収まりにくい"
+      confidence: high
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Dunker C, Schlegel K, Junker A"
+      year: 2025
+      journal: "Archiv der Pharmazie"
+      title: "Phenol (bio)isosteres in drug design and development"
+      doi: "10.1002/ardp.202400700"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)NCC(O)c1ccc(O)cc1"
+        products: ["CC(C)NCC(O)c1ccc(NS(=O)(=O)C)cc1"]
+        note: "ソタロール前駆フェノールからソタロールへの変換（脂肪族アルコールは不変）"
+      - parent: "CC(C)(C)NCC(O)c1cc(O)cc(O)c1"
+        products: ["CC(C)(C)NCC(O)c1cc(O)cc(NS(=O)(=O)C)c1"]
+        note: "テルブタリン（二箇所のフェノール性水酸基、脂肪族水酸基は不変）"
+    negative:
+      - parent: "CC(C)NCC(O)COc1cccc2ccccc12"
+        note: "プロプラノロール（脂肪族アルコールと芳香族エーテルのみ）"
+
+- id: phenol_to_aryl_hydroxymethyl
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["phenolic OH -> hydroxymethyl", "Ar-OH -> Ar-CH2OH"]
+    ja: ["フェノール性水酸基 -> ヒドロキシメチル"]
+  reaction: "[c;!$(c=[O,S,N]);!$(c[n,o,s]):1][OX2H1]>>[c:1]CO"
+  attachments: 1
+  class: nonclassical
+  context: "芳香環上のフェノール性水酸基をヒドロキシメチル基に置き換える。カテコールO-メチルトランスフェラーゼによる代謝を防ぎ経口持続性を改善する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: ionization
+      note: "フェノール性の酸性が失われて中性のアルコールになるため、イオン性の水素結合は弱まることがある"
+      confidence: high
+    - topic: metabolism
+      note: "ベンジル位アルコールが酸化されてアルデヒドやカルボン酸へ代謝されることがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)(C)NCC(O)c1ccc(O)c(O)c1"
+        products:
+          - "CC(C)(C)NCC(O)c1ccc(O)c(CO)c1"
+          - "CC(C)(C)NCC(O)c1ccc(CO)c(O)c1"
+        note: "カテコールアミン誘導体からサルブタモールへの変換（二箇所のフェノール水酸基）"
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CC(=O)Nc1ccc(CO)cc1"]
+        note: "アセトアミノフェン"
+    negative:
+      - parent: "CC(C)NCC(O)COc1cccc2ccccc12"
+        note: "プロプラノロール（脂肪族水酸基のみ）"
+
+- id: catechol_to_benzodioxole
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["catechol -> 1,3-benzodioxole", "3,4-dihydroxyphenyl -> methylenedioxyphenyl"]
+    ja: ["カテコール -> ベンゾジオキソール"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR1]([OX2H1])[cR1]([OX2H1])[cH1R1]1>>[*:1]c1ccc2c(c1)OCO2"
+  attachments: 1
+  class: nonclassical
+  context: "隣接する二つのフェノール水酸基を持つカテコール環をメチレンジオキシ環に置き換える。抱合代謝とオルトキノンへの酸化を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: toxicity_alert
+      note: "メチレンジオキシ基のメチレン炭素がシトクロム酵素で酸化されてカルベン中間体を生じ、酵素の不可逆的阻害を起こすことがある"
+      confidence: high
+    - topic: potency_risk
+      note: "二つの水酸基の水素結合供与能が失われ、受容体としてのみ働くようになる"
+      confidence: high
+  refs:
+    - authors: "Lima LM, Barreiro EJ"
+      year: 2005
+      journal: "Current Medicinal Chemistry"
+      title: "Bioisosterism: A Useful Strategy for Molecular Modification and Drug Design"
+      doi: "10.2174/0929867053363540"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "NCCc1ccc(O)c(O)c1"
+        products: ["NCCc1ccc2c(c1)OCO2"]
+        note: "ドパミンからホモピペロニルアミンへの変換"
+      - parent: "Oc1ccc(Cc2ccc(O)c(O)c2)cc1O"
+        products: ["Oc1ccc(Cc2ccc3c(c2)OCO3)cc1O"]
+        note: "ビスカテコールメタン（二箇所のカテコール環）"
+    negative:
+      - parent: "CC(C)(C)NCC(O)c1cc(O)cc(O)c1"
+        note: "テルブタリン（レゾルシノール型で隣接していない水酸基）"
+
+- id: sulfone_to_sulfoximine
+  family: phenol_and_polar_group_isosteres
+  names:
+    en: ["sulfone -> sulfoximine", "-SO2- -> -S(=O)(=NH)-"]
+    ja: ["スルホン -> スルホキシミン"]
+  reaction: "[#6:1][SX4R0](=O)(=O)[#6:2]>>[#6:1]S(=O)(=N)[#6:2]"
+  attachments: 2
+  class: nonclassical
+  context: "鎖状のスルホン基をスルホキシミン基に置き換える。四面体構造と極性を保ちつつ水素結合供与能を足し、水溶性を高める"
+  creates_stereocenter: true
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: other
+      note: "二つの炭素置換基が異なるとき硫黄原子が新たなキラル中心になるため、立体異性体の分離や評価が必要になる"
+      confidence: high
+    - topic: permeability
+      note: "水素結合供与体が一つ増えるため、膜透過性が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Frings M, Bolm C, Blum A, Gnamm C"
+      year: 2017
+      journal: "European Journal of Medicinal Chemistry"
+      title: "Sulfoximines from a Medicinal Chemist's Perspective: Physicochemical and in vitro Parameters Relevant for Drug Discovery"
+      doi: "10.1016/j.ejmech.2016.09.091"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2023
+      journal: "Journal of Agricultural and Food Chemistry"
+      title: "Applications of Bioisosteres in the Design of Biologically Active Compounds"
+      doi: "10.1021/acs.jafc.3c00765"
+      verified: true
+  tests:
+    positive:
+      - parent: "CS(=O)(=O)c1ccc(cc1)C1=C(C(=O)OC1)c1ccccc1"
+        products: ["CS(=O)(=N)c1ccc(C2=C(c3ccccc3)C(=O)OC2)cc1"]
+        note: "ロフェコキシブ"
+      - parent: "CS(=O)(=O)c1ccc(Cc2ccc(S(C)(=O)=O)cc2)cc1"
+        products: ["CS(=O)(=N)c1ccc(Cc2ccc(S(C)(=O)=O)cc2)cc1"]
+        note: "ビスメチルスルホニルジフェニルメタン（二箇所のスルホン）"
+    negative:
+      - parent: "Cc1ccc(cc1)-n1nc(cc1-c1ccc(cc1)S(N)(=O)=O)C(F)(F)F"
+        note: "セレコキシブ（スルホンアミドでありスルホンではない）"
+      - parent: "O=S1(=O)CCN(c2ccccc2)CC1"
+        note: "環状スルホン（チオモルホリンジオキシド）"

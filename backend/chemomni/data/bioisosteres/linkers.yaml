@@ -1,0 +1,369 @@
+- id: methylene_to_ether_linker
+  family: linkers
+  names:
+    en: ["methylene linker -> ether linker", "-CH2- -> -O-"]
+    ja: ["メチレンリンカー -> エーテルリンカー"]
+  reaction: "[#6;!$(C=[O,S,N]);!$([#6][#7,#8,#16,F,Cl,Br,I]):1][CH2R0][#6;!$(C=[O,S,N]);!$([#6][#7,#8,#16,F,Cl,Br,I]):2]>>[#6:1]O[#6:2]"
+  attachments: 2
+  class: classical
+  context: "ヘテロ原子やカルボニルに隣接しない鎖状メチレンリンカーをエーテル酸素に置き換える。脂溶性を下げ、ベンジル位などの酸化代謝を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "無極性のメチレンから孤立電子対を持つ酸素に変わるため、周囲の極性や配座選好性が変化する"
+      confidence: medium
+    - topic: metabolism
+      note: "アルコキシ芳香族となった場合、シトクロム酵素による酸化的開裂を受けることがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        products: ["CC(C)Oc1ccc(C(C)C(=O)O)cc1"]
+        note: "イブプロフェン（イソブチル基のメチレンをエーテルに変換）"
+      - parent: "c1ccc(Cc2ccc(Cc3ccccc3)cc2)cc1"
+        products: ["c1ccc(Cc2ccc(Oc3ccccc3)cc2)cc1"]
+        note: "ジベンジルベンゼン（二箇所のジアリールメチレンリンカー）"
+    negative:
+      - parent: "OC(=O)Cc1ccccc1Nc1c(Cl)cccc1Cl"
+        note: "ジクロフェナク（カルボニルに隣接するメチレンのみ）"
+      - parent: "C1CCCCC1"
+        note: "シクロヘキサン（環状メチレンのみ）"
+
+- id: ether_to_methylene_linker
+  family: linkers
+  names:
+    en: ["ether linker -> methylene linker", "-O- -> -CH2-"]
+    ja: ["エーテルリンカー -> メチレンリンカー"]
+  reaction: "[#6;!$(C=[O,S,N]);!$([CH3]):1][OX2R0][#6;!$(C=[O,S,N]);!$([CH3]):2]>>[#6:1]C[#6:2]"
+  attachments: 2
+  class: classical
+  context: "鎖状の内部エーテル結合をメチレン基に置き換える。エーテル開裂代謝の回避や疎水性の向上に使われる。末端メトキシ基やエステルには一致しない"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "酸素から炭素への置き換えにより脂溶性が上昇し、水溶性が低下することがある"
+      confidence: high
+    - topic: potency_risk
+      note: "エーテル酸素の水素結合受容能が失われ、芳香環との共役による配座選好性も変化する"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "CNCCC(Oc1ccc(cc1)C(F)(F)F)c1ccccc1"
+        products: ["CNCCC(Cc1ccc(C(F)(F)F)cc1)c1ccccc1"]
+        note: "フルオキセチン"
+      - parent: "c1ccc(Oc2ccc(Oc3ccccc3)cc2)cc1"
+        products: ["c1ccc(Cc2ccc(Oc3ccccc3)cc2)cc1"]
+        note: "ジフェノキシベンゼン（二箇所のエーテルリンカー）"
+    negative:
+      - parent: "COc1ccc2cc(ccc2c1)[C@H](C)C(=O)O"
+        note: "ナプロキセン（末端メトキシ基のみ）"
+      - parent: "CCOC(=O)c1ccc(N)cc1"
+        note: "ベンゾカイン（エステル結合のみ）"
+
+- id: ether_to_amino_linker
+  family: linkers
+  names:
+    en: ["ether linker -> secondary amine linker", "-O- -> -NH-"]
+    ja: ["エーテルリンカー -> アミノリンカー"]
+  reaction: "[#6;!$(C=[O,S,N]);!$([CH3]);!$([#6]([#7,#8,#16])[#7,#8,#16]):1][OX2R0][#6;!$(C=[O,S,N]);!$([CH3]);!$([#6]([#7,#8,#16])[#7,#8,#16]):2]>>[#6:1]N[#6:2]"
+  attachments: 2
+  class: classical
+  context: "鎖状の内部エーテル結合を二級アミンに置き換える。水素結合供与能を新たに付与したいときに使われる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: ionization
+      note: "脂肪族側鎖に挟まれた場合は塩基性を帯びるため、生理的条件での荷電状態や膜透過性が大きく変わる"
+      confidence: high
+    - topic: toxicity_alert
+      note: "芳香環に結合したアニリン構造やジアリールアミン構造となる場合、酸化によるキノンイミン生成リスクに注意が要る"
+      confidence: high
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "CNCCC(Oc1ccc(cc1)C(F)(F)F)c1ccccc1"
+        products: ["CNCCC(Nc1ccc(C(F)(F)F)cc1)c1ccccc1"]
+        note: "フルオキセチン"
+      - parent: "c1ccc(Oc2ccc(Oc3ccccc3)cc2)cc1"
+        products: ["c1ccc(Nc2ccc(Oc3ccccc3)cc2)cc1"]
+        note: "ジフェノキシベンゼン（二箇所のエーテルリンカー）"
+    negative:
+      - parent: "COc1ccc(NC(C)=O)cc1"
+        note: "メトキシアニリド（末端メトキシ基のみ）"
+
+- id: ether_to_thioether_linker
+  family: linkers
+  names:
+    en: ["ether linker -> thioether linker", "-O- -> -S-"]
+    ja: ["エーテルリンカー -> チオエーテルリンカー"]
+  reaction: "[#6;!$(C=[O,S,N]);!$([CH3]);!$([#6]([#7,#8,#16])[#7,#8,#16]):1][OX2R0][#6;!$(C=[O,S,N]);!$([CH3]);!$([#6]([#7,#8,#16])[#7,#8,#16]):2]>>[#6:1]S[#6:2]"
+  attachments: 2
+  class: classical
+  context: "鎖状の内部エーテル結合をチオエーテルに置き換える。結合長と結合角を変えつつ脂溶性を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: metabolism
+      note: "硫黄原子がシトクロム酵素やフラビン含有モノオキシゲナーゼによりスルホキシドやスルホンへ速やかに酸化されやすい"
+      confidence: high
+    - topic: potency_risk
+      note: "炭素ー硫黄結合は炭素ー酸素結合より長く結合角も狭いため、両側の置換基の相対配置が変わる"
+      confidence: high
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Thornber CW"
+      year: 1979
+      journal: "Chemical Society Reviews"
+      title: "Isosterism and molecular modification in drug design"
+      doi: "10.1039/CS9790800563"
+      verified: true
+  tests:
+    positive:
+      - parent: "CNCCC(Oc1ccc(cc1)C(F)(F)F)c1ccccc1"
+        products: ["CNCCC(Sc1ccc(C(F)(F)F)cc1)c1ccccc1"]
+        note: "フルオキセチン"
+      - parent: "c1ccc(Oc2ccc(Oc3ccccc3)cc2)cc1"
+        products: ["c1ccc(Oc2ccc(Sc3ccccc3)cc2)cc1"]
+        note: "ジフェノキシベンゼン（二箇所のエーテルリンカー）"
+    negative:
+      - parent: "COc1ccc2cc(ccc2c1)[C@H](C)C(=O)O"
+        note: "ナプロキセン（末端メトキシ基のみ）"
+
+- id: thioether_to_sulfone_linker
+  family: linkers
+  names:
+    en: ["thioether linker -> sulfone linker", "-S- -> -SO2-"]
+    ja: ["チオエーテルリンカー -> スルホンリンカー"]
+  reaction: "[#6;!$(C=[O,S,N]):1][SX2R0][#6;!$(C=[O,S,N]):2]>>[#6:1]S(=O)(=O)[#6:2]"
+  attachments: 2
+  class: linker
+  context: "鎖状のチオエーテル基をスルホン基に置き換える。硫黄の酸化的代謝をあらかじめ固定し、極性と水素結合受容能を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 2
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "極性表面積と分子量が増えるため、脂溶性が大きく下がり膜透過性が低下することがある"
+      confidence: high
+    - topic: potency_risk
+      note: "電子供与性のスルフィドから強い電子求引性のスルホンに変わり、二つの酸素原子による立体的な張り出しも増える"
+      confidence: high
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CSc1ccc(cc1)C1=C(C(=O)OC1)c1ccccc1"
+        products: ["CS(=O)(=O)c1ccc(C2=C(c3ccccc3)C(=O)OC2)cc1"]
+        note: "ロフェコキシブ前駆スルフィドからロフェコキシブへの変換"
+      - parent: "c1ccc(Sc2ccc(Sc3ccccc3)cc2)cc1"
+        products: ["O=S(=O)(c1ccccc1)c1ccc(Sc2ccccc2)cc1"]
+        note: "ビスフェニルチオベンゼン（二箇所のチオエーテルリンカー）"
+    negative:
+      - parent: "Cc1csc(n1)-c1ccccc1"
+        note: "フェニルチアゾール（芳香環内の硫黄）"
+
+- id: amide_to_sulfonamide_linker
+  family: linkers
+  names:
+    en: ["secondary amide -> sulfonamide", "-CONH- -> -SO2NH-"]
+    ja: ["二級アミドリンカー -> スルホンアミドリンカー"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]S(=O)(=O)N[#6:2]"
+  attachments: 2
+  class: linker
+  context: "鎖状の二級カルボン酸アミドをスルホンアミドに置き換える。加水分解への耐性を高め、平面構造から折れ曲がった四面体構造へ配座を変える"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: ionization
+      note: "アミドより窒素上の水素の酸性度が高まり、特にアニリン窒素では生理的条件で一部脱プロトン化することがある"
+      confidence: high
+    - topic: potency_risk
+      note: "平面的なアミド結合から四面体型硫黄へ幾何構造が大きく変わるため、両端の置換基の向きが変化する"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CS(=O)(=O)Nc1ccc(O)cc1"]
+        note: "アセトアミノフェン"
+      - parent: "Cc1ccc(NC(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        products:
+          - "Cc1ccc(NC(=O)c2ccc(S(=O)(=O)Nc3ccccc3)cc2)cc1"
+          - "Cc1ccc(NS(=O)(=O)c2ccc(C(=O)Nc3ccccc3)cc2)cc1"
+        note: "テレフタルアミド誘導体（二箇所の二級アミド）"
+    negative:
+      - parent: "CN(C)C(=O)c1ccccc1"
+        note: "三級アミド"
+
+- id: amide_to_urea_linker
+  family: linkers
+  names:
+    en: ["secondary amide -> urea", "-CONH- -> -NHCONH-"]
+    ja: ["二級アミドリンカー -> ウレアリンカー"]
+  reaction: "[#6:1][CX3R0](=O)[NX3H1R0][#6;!$(C=O):2]>>[#6:1]NC(=O)N[#6:2]"
+  attachments: 2
+  class: linker
+  context: "鎖状の二級カルボン酸アミドをウレア結合に置き換える。二座の水素結合供与能を付与し、キナーゼ阻害薬などのヒンジ・バックポケット結合を強める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: solubility
+      note: "強い分子間水素結合により結晶格子エネルギーが高まり、水溶性が著しく低下することがある"
+      confidence: high
+    - topic: permeability
+      note: "水素結合供与体と極性表面積が増えるため、膜透過性が下がることがある"
+      confidence: high
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CNC(=O)c1cc(Oc2ccc(C(=O)Nc3ccc(Cl)c(c3)C(F)(F)F)cc2)ccn1"
+        products:
+          - "CNC(=O)c1cc(Oc2ccc(NC(=O)Nc3ccc(Cl)c(C(F)(F)F)c3)cc2)ccn1"
+          - "CNC(=O)Nc1cc(Oc2ccc(C(=O)Nc3ccc(Cl)c(C(F)(F)F)c3)cc2)ccn1"
+        note: "ソラフェニブ前駆アミド体からソラフェニブへの変換（二箇所の二級アミド）"
+      - parent: "CC(=O)Nc1ccc(O)cc1"
+        products: ["CNC(=O)Nc1ccc(O)cc1"]
+        note: "アセトアミノフェン"
+    negative:
+      - parent: "CCOC(=O)c1ccccc1"
+        note: "安息香酸エチル（エステル）"
+
+- id: ketone_to_difluoromethylene_linker
+  family: linkers
+  names:
+    en: ["ketone linker -> difluoromethylene linker", "-C(=O)- -> -CF2-"]
+    ja: ["ケトンリンカー -> ジフルオロメチレンリンカー"]
+  reaction: "[#6:1][CX3R0](=O)[#6:2]>>[#6:1]C(F)(F)[#6:2]"
+  attachments: 2
+  class: linker
+  context: "鎖状のケトンカルボニル基をジフルオロメチレン基に置き換える。カルボニルの電子的効果と双極子をある程度保ちつつ還元代謝を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 1
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "カルボニルからジフルオロメチレンへの変換により脂溶性が上昇する"
+      confidence: high
+    - topic: potency_risk
+      note: "カルボニルの平面構造から四面体型炭素へ結合角が変わり、強い水素結合受容能も失われる"
+      confidence: high
+  refs:
+    - authors: "Gillis EP, Eastman KJ, Hill MD, Donnelly DJ, Meanwell NA"
+      year: 2015
+      journal: "Journal of Medicinal Chemistry"
+      title: "Applications of Fluorine in Medicinal Chemistry"
+      doi: "10.1021/acs.jmedchem.5b00258"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2018
+      journal: "Journal of Medicinal Chemistry"
+      title: "Fluorine and Fluorinated Motifs in the Design and Application of Bioisosteres for Drug Design"
+      doi: "10.1021/acs.jmedchem.7b01788"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C(c1ccccc1)c1cccc(C(C)C(=O)O)c1"
+        products: ["CC(C(=O)O)c1cccc(C(F)(F)c2ccccc2)c1"]
+        note: "ケトプロフェン（ケトン部位のみ変換）"
+      - parent: "CC(=O)c1ccc(C(=O)c2ccccc2)cc1"
+        products:
+          - "CC(=O)c1ccc(C(F)(F)c2ccccc2)cc1"
+          - "CC(F)(F)c1ccc(C(=O)c2ccccc2)cc1"
+        note: "アセチルベンゾフェノン（二箇所の鎖状ケトン）"
+    negative:
+      - parent: "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+        note: "イブプロフェン（カルボン酸のみ）"

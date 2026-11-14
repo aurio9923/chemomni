@@ -1,0 +1,457 @@
+- id: imidazolyl_to_triazolyl
+  family: heteroaryl_switches
+  names:
+    en: ["1-substituted 1H-imidazol-1-yl -> 1H-1,2,4-triazol-1-yl", "imidazole -> 1,2,4-triazole"]
+    ja: ["イミダゾリル -> トリアゾリル"]
+  reaction: "[*:1][nR1]1[cH1R1][cH1R1][nR1][cH1R1]1>>[*:1]n1cncn1"
+  attachments: 1
+  class: ring_replacement
+  context: "一置換イミダゾール環をトリアゾール環に置き換える。塩基性とヘム鉄への非特異的配位を弱め、代謝酵素阻害や選択性を改善する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "標的酵素がヘム鉄を含む場合、配位力の低下に伴って主薬効の結合親和性も変化することがある"
+      confidence: medium
+    - topic: ionization
+      note: "イミダゾールが持つ弱塩基性がほぼ失われ、生理的条件で中性として振る舞うようになる"
+      confidence: high
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "Clc1ccc(COC(Cn2ccnc2)c2ccc(Cl)cc2Cl)c(Cl)c1"
+        products: ["Clc1ccc(COC(Cn2cncn2)c2ccc(Cl)cc2Cl)c(Cl)c1"]
+        note: "ミコナゾール"
+      - parent: "OC(Cn1ccnc1)(Cn1ccnc1)c1ccc(F)cc1F"
+        products: ["OC(Cn1ccnc1)(Cn1cncn1)c1ccc(F)cc1F"]
+        note: "フルコナゾール前駆ビスイミダゾール体からフルコナゾールへの変換（二箇所のイミダゾール）"
+    negative:
+      - parent: "Cc1ncc([N+](=O)[O-])n1CCO"
+        note: "メトロニダゾール（多置換イミダゾール）"
+
+- id: thiazole_to_oxazole_two_four
+  family: heteroaryl_switches
+  names:
+    en: ["2,4-disubstituted 1,3-thiazole -> 2,4-disubstituted 1,3-oxazole"]
+    ja: ["チアゾール -> オキサゾール（二・四位置換）"]
+  reaction: "[*:1][cR1]1[nR1][cR1]([*:2])[cH1R1][sR1]1>>[*:1]c1nc([*:2])co1"
+  attachments: 2
+  class: classical
+  context: "二置換チアゾール環を対応するオキサゾール環に置き換える。五員芳香環の配置を保ちながら脂溶性を下げ、硫黄の酸化代謝を避ける"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "硫黄から酸素への置換で環の内部角と置換基の射出角が少し変わり、芳香族性も弱まる"
+      confidence: medium
+    - topic: metabolism
+      note: "無置換炭素を持つオキサゾール環はシトクロム酵素による酸化的開環を受けることがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "CN(C)Cc1csc(n1)-c1ccccc1"
+        products: ["CN(C)Cc1coc(-c2ccccc2)n1"]
+        note: "フェニルチアゾール誘導体"
+      - parent: "Cc1csc(n1)-c1ccc(cc1)-c1nc(C)cs1"
+        products: ["Cc1coc(-c2ccc(-c3nc(C)cs3)cc2)n1"]
+        note: "ビスチアゾリルベンゼン（二箇所のチアゾール環）"
+    negative:
+      - parent: "Cc1c(sc(n1)-c1ccc(OCC(C)C)c(c1)C#N)C(=O)O"
+        note: "フェブキソスタット（三置換チアゾール）"
+
+- id: oxazole_to_thiazole_two_four
+  family: heteroaryl_switches
+  names:
+    en: ["2,4-disubstituted 1,3-oxazole -> 2,4-disubstituted 1,3-thiazole"]
+    ja: ["オキサゾール -> チアゾール（二・四位置換）"]
+  reaction: "[*:1][cR1]1[nR1][cR1]([*:2])[cH1R1][oR1]1>>[*:1]c1nc([*:2])cs1"
+  attachments: 2
+  class: classical
+  context: "二置換オキサゾール環をチアゾール環に置き換える。芳香族安定性と脂溶性を高め、疎水ポケットとの分散力相互作用を強める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "酸素から硫黄への置き換えにより脂溶性と分子量が上がり、水溶性が低下することがある"
+      confidence: medium
+    - topic: toxicity_alert
+      note: "チアゾール環が酸化的代謝を受けてチオアミドやエポキシド様の反応性中間体を生じることがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCCc1cc(ccc1OCCc1nc(oc1)c1ccccc1)CC(=O)O"
+        products: ["CCCc1cc(CC(=O)O)ccc1OCCc1csc(-c2ccccc2)n1"]
+        note: "オキサゾール型フィブラート類縁体"
+      - parent: "Cc1coc(n1)-c1ccc(cc1)-c1nc(C)co1"
+        products: ["Cc1coc(-c2ccc(-c3nc(C)cs3)cc2)n1"]
+        note: "ビスオキサゾリルベンゼン（二箇所のオキサゾール環）"
+    negative:
+      - parent: "O=C(O)CCCc1nc(oc1-c1ccccc1)-c1ccccc1"
+        note: "オキサプロジン（三置換オキサゾール）"
+
+- id: thiazole_to_oxazole_two_five
+  family: heteroaryl_switches
+  names:
+    en: ["2,5-disubstituted 1,3-thiazole -> 2,5-disubstituted 1,3-oxazole"]
+    ja: ["チアゾール -> オキサゾール（二・五位置換）"]
+  reaction: "[*:1][cR1]1[nR1][cH1R1][cR1]([*:2])[sR1]1>>[*:1]c1ncc([*:2])o1"
+  attachments: 2
+  class: classical
+  context: "二・五位で置換されたチアゾール環をオキサゾール環に置き換える。直線に近いリンカー配置を保ちつつ脂溶性を下げる"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "硫黄と酸素の原子半径の違いにより、両端の置換基がなす角度が少し変化する"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Subbaiah MAM, Meanwell NA"
+      year: 2021
+      journal: "Journal of Medicinal Chemistry"
+      title: "Bioisosteres of the Phenyl Ring: Recent Strategic Applications in Lead Optimization and Drug Design"
+      doi: "10.1021/acs.jmedchem.1c01215"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(C)Cc1cnc(C(C)C(=O)O)s1"
+        products: ["CC(C)Cc1cnc(C(C)C(=O)O)o1"]
+        note: "チアゾール型イブプロフェン類縁体"
+      - parent: "Cc1cnc(s1)-c1ccc(cc1)-c1ncc(C)s1"
+        products: ["Cc1cnc(-c2ccc(-c3ncc(C)o3)cc2)s1"]
+        note: "二箇所の二・五位置換チアゾールを持つビアリール"
+    negative:
+      - parent: "CN(C)Cc1csc(n1)-c1ccccc1"
+        note: "二・四位置換チアゾール"
+
+- id: pyrazole_to_isoxazole
+  family: heteroaryl_switches
+  names:
+    en: ["3,5-disubstituted 1H-pyrazole -> 3,5-disubstituted isoxazole"]
+    ja: ["ピラゾール -> イソキサゾール"]
+  # 2026-11-08 (user decision): both regioisomers are produced whichever N-H tautomer is drawn. The two ring
+  # nitrogens are written as "N-H or pyridine-type" (an N-substituted pyrazole still does not match), so the
+  # template fits the ring in both directions.
+  reaction: "[*:1][cR1]1[cH1R1][cR1]([*:2])[nR1;H1,X2][nR1;H1,X2]1>>[*:1]c1cc([*:2])no1"
+  attachments: 2
+  class: ring_replacement
+  context: "無置換窒素を持つピラゾール環をイソキサゾール環に置き換える。水素結合供与体を除いて膜透過性や経口吸収性を改善する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "ピラゾールの水素結合供与能が失われ、互変異性による双方向の水素結合ネットワークも固定化される"
+      confidence: high
+    - topic: metabolism
+      note: "イソキサゾール環の窒素ー酸素結合は還元的な開環代謝を受けることがある"
+      confidence: medium
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1cc([nH]n1)-c1ccc(cc1)S(N)(=O)=O"
+        products:
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)no1"
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)on1"
+        note: "ピラゾール型スルホンアミド。位置異性体のイソキサゾールが両方出る（前者がバルデコキシブ型の骨格）"
+      - parent: "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)n[nH]1"
+        products:
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)no1"
+          - "Cc1cc(-c2ccc(S(N)(=O)=O)cc2)on1"
+        note: "同じピラゾールを N-H の位置を変えて描いたもの。互変異性体の描き方に依らず同じ 2 種が出る"
+      - parent: "Cc1cc(C)[nH]n1"
+        products: ["Cc1cc(C)no1"]
+        note: "対称なピラゾール（二つの位置異性体が同じ分子になり 1 種にまとまる）"
+      - parent: "Cc1cc([nH]n1)-c1ccc(cc1)-c1cc(C)[nH]n1"
+        products:
+          - "Cc1cc(-c2ccc(-c3cc(C)[nH]n3)cc2)on1"
+          - "Cc1cc(-c2ccc(-c3cc(C)[nH]n3)cc2)no1"
+          - "Cc1cc(-c2ccc(-c3cc(C)on3)cc2)[nH]n1"
+          - "Cc1cc(-c2ccc(-c3cc(C)no3)cc2)[nH]n1"
+        note: "ビスピラゾリルベンゼン（二箇所のピラゾール環、それぞれ位置異性体が 2 種）"
+    negative:
+      - parent: "Cc1ccc(cc1)-n1nc(cc1-c1ccc(cc1)S(N)(=O)=O)C(F)(F)F"
+        note: "セレコキシブ（窒素が置換された三置換ピラゾール）"
+      - parent: "Cc1cc(-c2ccccc2)n(C)n1"
+        note: "N-メチルピラゾール（窒素が置換されているので対象外）"
+
+- id: isoxazole_to_pyrazole
+  family: heteroaryl_switches
+  names:
+    en: ["3,5-disubstituted isoxazole -> 3,5-disubstituted 1H-pyrazole"]
+    ja: ["イソキサゾール -> ピラゾール"]
+  reaction: "[*:1][cR1]1[cH1R1][cR1]([*:2])[nR1][oR1]1>>[*:1]c1cc([*:2])[nH]n1"
+  attachments: 2
+  class: ring_replacement
+  context: "二置換イソキサゾール環をピラゾール環に置き換える。水素結合供与能を付与し、窒素ー酸素結合の還元的開環を防ぐ"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "水素結合供与体が加わり極性表面積が増えるため、膜透過性や脳移行性が下がることがある"
+      confidence: medium
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "Cc1cc(no1)NS(=O)(=O)c1ccc(N)cc1"
+        products: ["Cc1cc(NS(=O)(=O)c2ccc(N)cc2)[nH]n1"]
+        note: "スルファメトキサゾール"
+      - parent: "Cc1cc(no1)-c1ccc(cc1)-c1cc(C)on1"
+        products: ["Cc1cc(-c2ccc(-c3cc(C)[nH]n3)cc2)no1"]
+        note: "ビスイソキサゾリルベンゼン（二箇所のイソキサゾール環）"
+    negative:
+      - parent: "Cc1oncc1C(=O)Nc1ccc(cc1)C(F)(F)F"
+        note: "レフルノミド（三・四位または四・五位置換イソキサゾール）"
+
+- id: unsym_to_sym_oxadiazole
+  family: heteroaryl_switches
+  names:
+    en: ["3,5-disubstituted 1,2,4-oxadiazole -> 2,5-disubstituted 1,3,4-oxadiazole"]
+    ja: ["非対称オキサジアゾール -> 対称型オキサジアゾール"]
+  reaction: "[*:1][cR1]1[nR1][cR1]([*:2])[nR1][oR1]1>>[*:1]c1nnc([*:2])o1"
+  attachments: 2
+  class: ring_replacement
+  context: "非対称なオキサジアゾール環を対称型のオキサジアゾール環に置き換える。双極子モーメントと脂溶性バランスを調整し代謝安定性を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "ヘテロ原子の配置と双極子の向きが変わるため、水素結合受容体としての相互作用の角度が変化する"
+      confidence: medium
+  refs:
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCN(CC)CCc1nc(no1)-c1ccccc1"
+        products: ["CCN(CC)CCc1nnc(-c2ccccc2)o1"]
+        note: "オキソラミン"
+      - parent: "Cc1nc(no1)-c1ccc(cc1)-c1nc(C)no1"
+        products:
+          - "Cc1nc(-c2ccc(-c3nnc(C)o3)cc2)no1"
+          - "Cc1noc(-c2ccc(-c3nnc(C)o3)cc2)n1"
+        note: "ビスオキサジアゾリルベンゼン（二箇所の非対称オキサジアゾール）"
+    negative:
+      - parent: "Cc1nnc(o1)-c1ccccc1"
+        note: "すでに対称型のオキサジアゾール"
+
+- id: oxadiazole_to_thiadiazole
+  family: heteroaryl_switches
+  names:
+    en: ["2,5-disubstituted 1,3,4-oxadiazole -> 2,5-disubstituted 1,3,4-thiadiazole"]
+    ja: ["オキサジアゾール -> チアジアゾール"]
+  reaction: "[*:1][cR1]1[nR1][nR1][cR1]([*:2])[oR1]1>>[*:1]c1nnc([*:2])s1"
+  attachments: 2
+  class: classical
+  context: "対称型のオキサジアゾール環をチアジアゾール環に置き換える。芳香族性と脂溶性を高め、膜透過性を調整する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: lipophilicity
+      note: "酸素から硫黄への置き換えにより脂溶性が上がり、水溶性が下がることがある"
+      confidence: medium
+    - topic: potency_risk
+      note: "炭素ー硫黄結合が長いため、両端の置換基の射出角がオキサジアゾールより直線に近づく"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Kumari S, Carmona AV, Tiwari AK, Trippier PC"
+      year: 2020
+      journal: "Journal of Medicinal Chemistry"
+      title: "Amide Bond Bioisosteres: Strategies, Synthesis, and Successes"
+      doi: "10.1021/acs.jmedchem.0c00530"
+      verified: true
+  tests:
+    positive:
+      - parent: "CCN(CC)CCc1nnc(o1)-c1ccccc1"
+        products: ["CCN(CC)CCc1nnc(-c2ccccc2)s1"]
+        note: "オキソラミン対称型異性体"
+      - parent: "Cc1nnc(o1)-c1ccc(cc1)-c1nnc(C)o1"
+        products: ["Cc1nnc(-c2ccc(-c3nnc(C)s3)cc2)o1"]
+        note: "ビスオキサジアゾリルベンゼン（二箇所の対称型オキサジアゾール）"
+    negative:
+      - parent: "CCN(CC)CCc1nc(no1)-c1ccccc1"
+        note: "オキソラミン（非対称なオキサジアゾール）"
+
+- id: benzofuran_to_indole
+  family: heteroaryl_switches
+  names:
+    en: ["2-substituted benzofuran -> 2-substituted 1H-indole", "benzofuran -> indole"]
+    ja: ["ベンゾフラン -> インドール"]
+  reaction: "[*:1][cR1]1[cH1R1][cR2]2[cH1R1][cH1R1][cH1R1][cH1R1][cR2]2[oR1]1>>[*:1]c1cc2ccccc2[nH]1"
+  attachments: 1
+  class: classical
+  context: "二位で置換されたベンゾフラン環をインドール環に置き換える。二環式の平面骨格を保ちつつ水素結合供与能を付与する"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: permeability
+      note: "水素結合供与体が一つ増えるため、脂溶性が下がり膜透過性が変化することがある"
+      confidence: medium
+  refs:
+    - authors: "Patani GA, LaVoie EJ"
+      year: 1996
+      journal: "Chemical Reviews"
+      title: "Bioisosterism: A Rational Approach in Drug Design"
+      doi: "10.1021/cr950066q"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "O=C(c1cc2ccccc2o1)c1ccc(O)cc1"
+        products: ["O=C(c1ccc(O)cc1)c1cc2ccccc2[nH]1"]
+        note: "ベンゾフラニルケトン誘導体"
+      - parent: "c1ccc2oc(Cc3cc4ccccc4o3)cc2c1"
+        products: ["c1ccc2oc(Cc3cc4ccccc4[nH]3)cc2c1"]
+        note: "ビスベンゾフラニルメタン（二箇所のベンゾフラン環）"
+    negative:
+      - parent: "CCCCc1oc2ccccc2c1C(=O)c1cc(I)c(OCCN(CC)CC)c(I)c1"
+        note: "アミオダロン（二・三位二置換ベンゾフラン）"
+
+- id: indole_to_indazole
+  family: heteroaryl_switches
+  names:
+    en: ["5-substituted 1H-indole -> 5-substituted 1H-indazole", "indole -> indazole"]
+    ja: ["インドール -> インダゾール"]
+  reaction: "[*:1][cR1]1[cH1R1][cH1R1][cR2]2[nH1R1][cH1R1][cH1R1][cR2]2[cH1R1]1>>[*:1]c1ccc2[nH]ncc2c1"
+  attachments: 1
+  class: ring_replacement
+  context: "五位で置換されたインドール環をインダゾール環に置き換える。インドール三位の酸化的代謝を防ぎ、水溶性と代謝安定性を高める"
+  creates_stereocenter: false
+  net_heavy_atom_change: 0
+  status: active
+  review: {decision: ok, date: "2026-11-07"}
+  risks:
+    - topic: potency_risk
+      note: "二位炭素が窒素に置き換わるため、新しく生じる孤立電子対の向きと疎水性ポケットの相性が影響する"
+      confidence: medium
+  refs:
+    - authors: "Meanwell NA"
+      year: 2011
+      journal: "Journal of Medicinal Chemistry"
+      title: "Synopsis of Some Recent Tactical Application of Bioisosteres in Drug Design"
+      doi: "10.1021/jm1013693"
+      verified: true
+    - authors: "Taylor RD, MacCoss M, Lawson ADG"
+      year: 2014
+      journal: "Journal of Medicinal Chemistry"
+      title: "Rings in Drugs"
+      doi: "10.1021/jm4017625"
+      verified: true
+  tests:
+    positive:
+      - parent: "CC(=O)Nc1ccc2[nH]ccc2c1"
+        products: ["CC(=O)Nc1ccc2[nH]ncc2c1"]
+        note: "アセチルアミノインドール"
+      - parent: "O=C(Nc1ccc2[nH]ccc2c1)c1ccc2[nH]ccc2c1"
+        products:
+          - "O=C(Nc1ccc2[nH]ccc2c1)c1ccc2[nH]ncc2c1"
+          - "O=C(Nc1ccc2[nH]ncc2c1)c1ccc2[nH]ccc2c1"
+        note: "二箇所のインドール環を持つアミド"
+    negative:
+      - parent: "CNS(=O)(=O)Cc1ccc2[nH]cc(CCN(C)C)c2c1"
+        note: "スマトリプタン（三位にも置換基があるインドール）"
