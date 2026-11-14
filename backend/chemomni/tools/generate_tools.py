@@ -9,12 +9,13 @@ from starlette.concurrency import run_in_threadpool
 
 from chemomni.api.tabs import create_tab
 from chemomni.chem.depict import depict, depict_molblock, molblock
-from chemomni.chem.generate import Evaluation, evaluate
+from chemomni.chem.generate import CandidateSpec, Evaluation, evaluate
 from chemomni.chem.layout import layout_smiles
 from chemomni.chem.names import NameResolver
 from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.chem.scan import Change, scan, target_from_selection, target_from_smarts
 from chemomni.models import TabRead
+from chemomni.tools.refs import smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 GRID_CARD = (220, 160)
@@ -32,13 +33,24 @@ class Candidate(BaseModel):
     rationale: str = Field(
         ..., max_length=160, description="Why this one, in a few words, e.g. 'blocks para-oxidation'."
     )
+    parent_ref: str | None = Field(
+        None,
+        description="Number of the compound in the editor this one is derived from (see <compounds>). Give it "
+        "when candidates come from different compounds: each is then laid out on its own parent's drawing.",
+    )
+    parent_smiles: str | None = Field(
+        None, description="Same as parent_ref, as SMILES, for a parent that is not numbered."
+    )
 
 
 class ProposeIn(BaseModel):
     parent_smiles: str | None = Field(
         None,
         description="The molecule the series starts from, as it appears on the active tab. "
-        "Omit only for ideas without a starting structure.",
+        "Omit only for ideas without a starting structure, or when every candidate names its own parent.",
+    )
+    parent_ref: str | None = Field(
+        None, description="Number of the starting compound in the editor (see <compounds>), instead of SMILES."
     )
     candidates: list[Candidate] = Field(..., min_length=1, max_length=20)
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'Aspirin analogs'.")
@@ -51,12 +63,16 @@ def _summary_propose(r: ToolResult) -> str:
     return f"{len(r['accepted'])} accepted" + (f", {rejected} rejected" if rejected else "")
 
 
-def _compact(item: dict[str, Any]) -> dict[str, Any]:
-    """What the LLM needs to talk about one grid item; the user sees the full table."""
+def _compact(item: dict[str, Any], *, with_parent: bool = False) -> dict[str, Any]:
+    """What the LLM needs to talk about one grid item; the user sees the full table.
+
+    ``with_parent`` adds the item's own parent, for grids whose candidates come from different structures.
+    """
     keys = ("smiles", "similarity", "mw", "clogp", "tpsa", "qed", "sa_score", "lipinski_violations")
     return {
         "n": item["index"],
         "note": item["rationale"],
+        **({"parent": item["parent_smiles"]} if with_parent and item.get("parent_smiles") else {}),
         **{k: item[k] for k in keys},
         "alerts": len(item["pains_alerts"]) + len(item["brenk_alerts"]),
     }
@@ -69,20 +85,37 @@ def _compact(item: dict[str, Any]) -> dict[str, Any]:
         "Each candidate is validated with RDKit; invalid ones, duplicates and the parent itself come back "
         "as rejected (fix and resend those only). Accepted ones open together on a new grid tab, laid out "
         "like the parent, and the user sees a table with properties and Tanimoto similarity to the parent. "
-        "Do not call validate_structures first."
+        'To apply an edit to several compounds and collect the results on ONE tab ("convert the esters of 1, '
+        "3 and 5 to acids and put them together\"), send every result in one call and name each one's "
+        "parent with `parent_ref`: each result keeps its own parent's drawing. Do not call "
+        "validate_structures first."
     ),
     summary=_summary_propose,
 )
 async def propose_structures_tool(args: ProposeIn, ctx: ToolContext) -> ToolResult:
-    pairs = [(c.smiles, c.rationale) for c in args.candidates]
-    return await present_candidates(ctx, args.title, args.parent_smiles, pairs)
+    errors: list[str] = []
+
+    def resolve(ref: str | None, smiles: str | None) -> str | None:
+        if not ref:
+            return smiles
+        compound, err = smiles_for(ctx, ref)
+        if compound is None or compound.smiles is None:
+            errors.append(err or f"unknown compound {ref}")
+            return None
+        return compound.smiles
+
+    parent = resolve(args.parent_ref, args.parent_smiles)
+    triples = [(c.smiles, c.rationale, resolve(c.parent_ref, c.parent_smiles)) for c in args.candidates]
+    if errors:
+        return {"ok": False, "errors": sorted(set(errors))}
+    return await present_candidates(ctx, args.title, parent, triples)
 
 
 async def present_candidates(
     ctx: ToolContext,
     title: str,
     parent_smiles: str | None,
-    pairs: list[tuple[str, str]],
+    pairs: list[CandidateSpec],
     *,
     molfile: str | None = None,
     skipped: list[dict[str, str]] | None = None,
@@ -97,18 +130,6 @@ async def present_candidates(
     if not result.ok:
         return {"ok": False, "errors": result.errors, "rejected": rejected}
 
-    tab = await create_tab(
-        ctx.session,
-        ctx.workspace_id,
-        name=title,
-        content_format="mol",
-        content=result.grid_molblock or "",
-        smiles=[a.smiles for a in result.accepted],
-        source="ai",
-        origin_message_id=ctx.message_id,
-    )
-    ctx.emit_event("tab.create", {"tab": _tab_payload(tab), "activate": True})
-
     def _cards() -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
         items = [
             {
@@ -118,6 +139,7 @@ async def present_candidates(
                 "smiles": a.smiles,
                 "rationale": a.rationale,
                 "similarity": a.similarity,
+                "parent_smiles": a.parent_smiles,
                 "molfile": a.molblock,
                 "svg": depict_molblock(a.molblock, *GRID_CARD, tuple(a.changed_atoms)),
             }
@@ -131,6 +153,19 @@ async def present_candidates(
         return items, parent
 
     items, parent = await run_in_threadpool(_cards)
+
+    # the cards are built before the tab exists, so a failure here cannot leave an orphan tab behind
+    tab = await create_tab(
+        ctx.session,
+        ctx.workspace_id,
+        name=title,
+        content_format="mol",
+        content=result.grid_molblock or "",
+        smiles=[a.smiles for a in result.accepted],
+        source="ai",
+        origin_message_id=ctx.message_id,
+    )
+    ctx.emit_event("tab.create", {"tab": _tab_payload(tab), "activate": True})
     await ctx.emit_artifact(
         "grid",
         {
@@ -147,7 +182,7 @@ async def present_candidates(
         "tab_id": tab.id,
         "tab_name": tab.name,
         "parent_smiles": result.parent_smiles,
-        "accepted": [_compact(i) for i in items],
+        "accepted": [_compact(i, with_parent=result.parent_smiles is None) for i in items],
         "rejected": rejected,
     }
 
@@ -197,6 +232,9 @@ class ScanIn(BaseModel):
         "Needs parent_smiles if the active tab holds several molecules.",
     )
     parent_smiles: str | None = Field(None, description="Only with smarts: the molecule to search.")
+    parent_ref: str | None = Field(
+        None, description="Only with smarts: number of the compound in the editor to search (see <compounds>)."
+    )
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'F + Me scan'.")
 
 
@@ -230,7 +268,13 @@ async def scan_positions_tool(args: ScanIn, ctx: ToolContext) -> ToolResult:
             return {"ok": False, "errors": ["the editor content is not available; name the part with smarts"]}
         target, err = await run_in_threadpool(target_from_selection, molfile, args.atoms or selection)
     elif args.smarts:
-        parent = args.parent_smiles or _single_molecule(active)
+        parent = args.parent_smiles
+        if args.parent_ref:
+            compound, err = smiles_for(ctx, args.parent_ref)
+            if compound is None or compound.smiles is None:
+                return {"ok": False, "errors": [err or f"unknown compound {args.parent_ref}"]}
+            parent = compound.smiles
+        parent = parent or _single_molecule(active)
         if parent is None:
             return {"ok": False, "errors": ["the active tab holds several molecules; pass parent_smiles"]}
         target, err = await run_in_threadpool(target_from_smarts, parent, args.smarts)

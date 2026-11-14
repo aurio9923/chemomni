@@ -15,11 +15,12 @@ practical knowledge needed to implement it. Update it when you learn something t
 - Backend: `uv add <pkg>` to add deps (never hand-edit `[project.dependencies]`), `uv run` for
   everything. Lint `uv run ruff check . && uv run ruff format --check .`, test `uv run pytest`.
   Ruff uses a selected rule set (E, F, I, B, UP, SIM, RUF), not `ALL`. Type checking is optional.
-- Frontend: `pnpm tsc --noEmit`, `pnpm vitest run`, `pnpm build`.
+- Frontend: `pnpm tsc --noEmit`, `pnpm vitest run`, `pnpm build`. There is no prettier config: never run
+  `npx prettier` (it reformats whole files); follow the surrounding style (no semicolons, single quotes).
 - Tests and E2E never call a real LLM: set `CHEMOMNI_PROVIDER=fake` and script the
   `FakeProvider`. Its rule-based mode reacts to keywords (`pyridine`, `fluor`, `analog`, `replace`,
-  `methyl`, `highlight`); E2E relies on them.
-- Run E2E with the preinstalled Playwright (`python3 e2e/smoke.py <url> <png> [grid.png]`);
+  `methyl`, `highlight`, and `compound N` + `substructure`); E2E relies on them.
+- Run E2E with the preinstalled Playwright (`python3 e2e/smoke.py <url> <png> [grid.png] [scan.png] [search.png]`);
   `uv run --with playwright` pulls a newer version that cannot find the installed browser.
 - Commits are small; after M0, work on feature branches and open PRs.
 
@@ -191,6 +192,14 @@ async for chunk in stream:
   `layout_smiles`). `chem/generate.py` aligns every proposal to the parent's template and shifts all of
   them by the template's centre, so the shared core sits at the same spot of each grid cell. `align()`
   already returns the template's scale; rescaling its output again moves the core slightly.
+- One grid, several parents (PLAN Q58): `evaluate(parent, candidates, molfile)` takes `(smiles, rationale)`
+  or `(smiles, rationale, parent_smiles)`; a candidate's own parent wins over the default parent. Without
+  any named parent the layout follows the most similar structure on the tab (`_closest_on_tab`, Morgan
+  Tanimoto >= 0.3, layout only, no similarity column); unrelated ideas get a plain layout. Each parent has
+  its own template and each candidate is centred on its own template, so every result keeps the drawing
+  of its own parent. The grid has a parent card and similarity only when all candidates share one parent;
+  grid items always carry `parent_smiles`. Tests: `tests/test_series_layout.py` (drift of MCS atoms after
+  removing a translation; the plain layout is the control and must drift > 0.5).
 - Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the changes (`substitute` a
   group for H, or `replace_atom` to an element; `changes` takes up to three and they are combined: every
   way of giving each change its own atom, identical changes not counted in both orders, results merged by
@@ -209,6 +218,19 @@ async for chunk in stream:
   `SMILES` (`ConnectivitySMILES` has no stereo); read `IsomericSMILES` as a fallback. Keep requests at
   ≤ 5/s (one `NameResolver` per app in `app.state.services["names"]`). Tests mock it with
   `httpx.MockTransport`; the sandbox cannot reach PubChem.
+- Numbered compounds (`chem/compounds.py`, `tools/refs.py`, PLAN Q57). A number is a Ketcher text object
+  written next to a structure. The client sends the KET with every chat turn; `build_compounds(ket, molfile)`
+  reads molecule boxes and texts from the KET, gives each structure the nearest label (nearest pairs first,
+  one label per structure, ambiguity and duplicates become notes) and matches KET molecules to molfile
+  fragments by atom coordinates (never by order). The LLM sees `[1] SMILES` in `<compounds>` and passes
+  `ref` / `refs` / `query_ref` / `target_refs` / `ref_a` / `ref_b` / `parent_ref`; the backend resolves them.
+  `substructure_search(query_ref=...)` uses the drawn molecule as the query (`GetSubstructMatches`): elements and
+  bond orders, no H counts or charges, no stereo. Ketcher facts (verified in 3.18, fixtures in
+  `backend/tests/fixtures/`): KET text nodes are `{type:'text', boundingBox, paragraphs[].parts[].text}`; KET
+  and V3000 coordinates are identical, y points up; `setMolecule` accepts text nodes in that shape (and in the
+  older `data.content` Lexical shape), so "Number compounds" is `POST /api/chem/number-compounds` (KET in, KET out)
+  followed by `bridge.setKet` (an ordinary undoable edit, autosaved). `getSmarts()` keeps aromatic atoms of an
+  imported SMARTS where the molfile loses them (the molfile path then matches aliphatic rings too).
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.

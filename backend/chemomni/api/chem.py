@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
+from chemomni.chem.compounds import number_compounds
 from chemomni.chem.props import canonical_smiles, compute_light, compute_properties, parse_smiles
 
 router = APIRouter(prefix="/api/chem", tags=["chem"])
@@ -32,3 +33,14 @@ async def validate(body: SmilesBatch) -> dict[str, Any]:
         return {"input": s, "ok": True, "canonical_smiles": canonical_smiles(mol), "errors": []}
 
     return {"rows": await run_in_threadpool(lambda: [_one(s) for s in body.smiles])}
+
+
+class NumberRequest(BaseModel):
+    ket: str = Field(..., max_length=5_000_000, description="The editor document (KET)")
+
+
+@router.post("/number-compounds")
+async def number_compounds_endpoint(body: NumberRequest) -> dict[str, Any]:
+    """Write a number under every structure that has none (the editor's "Number compounds" button)."""
+    ket, added = await run_in_threadpool(number_compounds, body.ket)
+    return {"ket": ket, "added": added}

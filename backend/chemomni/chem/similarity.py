@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from rdkit import Chem, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
 
 from chemomni.chem.props import canonical_smiles, parse_smiles
+
+if TYPE_CHECKING:
+    from chemomni.chem.compounds import Compound
 
 _morgan = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
 
@@ -47,3 +51,28 @@ def substructure(smiles: list[str], smarts: str) -> dict[str, Any]:
             }
         )
     return {"ok": True, "smarts": smarts, "rows": rows}
+
+
+def match_compounds(query: Chem.Mol, targets: Sequence[Compound]) -> list[dict[str, Any]]:
+    """Which structures of a tab contain ``query`` (a drawn structure, used as it was drawn).
+
+    Atoms match by element, bonds by order (aromatic only to aromatic); hydrogen counts and charges
+    of the query are not required of the target, and stereochemistry is ignored.
+    """
+    rows: list[dict[str, Any]] = []
+    for c in targets:
+        base = {"ref": c.label, "index": c.index, "smiles": c.shown}
+        if c.is_query:
+            rows.append({**base, "ok": False, "error": "this drawing is itself a query (atom lists, any atom, ...)"})
+            continue
+        matches = c.mol.GetSubstructMatches(query)
+        rows.append(
+            {
+                **base,
+                "ok": True,
+                "match": bool(matches),
+                "n_matches": len(matches),
+                "atoms": sorted({i for m in matches for i in m}),
+            }
+        )
+    return rows

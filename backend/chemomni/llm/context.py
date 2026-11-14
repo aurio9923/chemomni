@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from chemomni.chem.compounds import build_compounds
 from chemomni.chem.edit import selection_info
 from chemomni.llm.prompts import SYSTEM_PROMPT
 from chemomni.models import Message as MessageRow
@@ -21,6 +22,9 @@ class ActiveTabSnapshot(BaseModel):
     revision: int = 0
     smiles: list[str] = Field(default_factory=list)
     molfile: str | None = None
+    ket: str | None = Field(
+        None, description="KET of the editor: structure positions and the numbers written next to them"
+    )
     selection_atoms: list[int] = Field(default_factory=list, description="1-based molfile atom numbers")
 
 
@@ -46,6 +50,26 @@ def _atom_count(molfile: str) -> int:
     return 0
 
 
+def _compounds_block(a: ActiveTabSnapshot) -> list[str]:
+    """The structures the user numbered, so that "compound 1" can be answered without copying SMILES."""
+    table = build_compounds(a.ket, a.molfile)
+    numbered = table.labelled
+    if not numbered:
+        return []
+    lines = [
+        "<compounds>",
+        "Structures on the active tab, by the number the user wrote next to them. When the user says "
+        '"compound 1" or "1番", pass that number as `ref` (or `query_ref`) to tools; do not copy the SMILES.',
+    ]
+    lines.extend(f"[{c.label}] {c.shown}" for c in numbered)
+    rest = [c for c in table.compounds if not c.label]
+    if rest:
+        lines.append(f"{len(rest)} more structure(s) have no number.")
+    lines.extend(f"Note: {n}." for n in table.notes)
+    lines.append("</compounds>")
+    return lines
+
+
 def snapshot_block(snap: Snapshot) -> str:
     lines = ["<workspace>", "Tabs:"]
     for t in snap.tabs[:50]:
@@ -69,6 +93,7 @@ def snapshot_block(snap: Snapshot) -> str:
     else:
         lines.append("The active tab is empty.")
     lines.append("</active_tab>")
+    lines.extend(_compounds_block(a))
     sel = selection_info(a.molfile, a.selection_atoms)
     if sel:
         pairs = ", ".join(f"{n}:{el}" for n, el in zip(sel["atoms"], sel["elements"], strict=True))  # type: ignore[arg-type]

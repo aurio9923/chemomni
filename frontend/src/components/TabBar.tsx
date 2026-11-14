@@ -1,11 +1,22 @@
-import { Copy, History, Plus, Sparkles, Split, X } from 'lucide-react'
+import { Copy, Hash, History, Plus, Sparkles, Split, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { useWorkspace } from '../store/workspace'
 
 export function TabBar() {
-  const { tabs, activeTabId, activate, newTab, closeTab, duplicateTab, splitTab, renameTab, restoreLastClosed, saving } =
-    useWorkspace()
+  const {
+    tabs,
+    activeTabId,
+    activate,
+    newTab,
+    closeTab,
+    duplicateTab,
+    splitTab,
+    numberCompounds,
+    renameTab,
+    restoreLastClosed,
+    saving,
+  } = useWorkspace()
   const [editing, setEditing] = useState<string | null>(null)
 
   return (
@@ -105,6 +116,15 @@ export function TabBar() {
         <span aria-live="polite" className="w-12 text-right">
           {saving ? 'Saving…' : ''}
         </span>
+        <button
+          type="button"
+          title="Number compounds: write 1, 2, 3 … under each structure, so you can say &quot;compound 1&quot; in the chat"
+          aria-label="Number compounds"
+          className="rounded p-1 hover:bg-line hover:text-ink"
+          onClick={() => void numberCompounds()}
+        >
+          <Hash className="size-4" />
+        </button>
         <button
           type="button"
           title="Reopen closed tab"
