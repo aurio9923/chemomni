@@ -139,6 +139,11 @@ export function setKet(ket: string): Promise<void> {
   })
 }
 
+/** Replace the document with a file's text in any format Ketcher reads (KET, CDXML, RXN, ...). A user-visible edit. */
+export function setStructure(text: string): Promise<void> {
+  return setKet(text)
+}
+
 /** Dot-separated components as individual SMILES; empty canvas or reactions give []. */
 export async function getComponentSmiles(): Promise<string[]> {
   try {

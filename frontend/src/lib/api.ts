@@ -1,4 +1,4 @@
-import type { AppConfig, ContentFormat, LightRow, StoredMessage, Tab, Workspace } from './types'
+import type { AppConfig, ContentFormat, ExportResult, ImportResult, LightRow, StoredMessage, Tab, Workspace } from './types'
 
 export class ApiError extends Error {
   readonly status: number
@@ -46,6 +46,11 @@ export const api = {
     request<Tab[]>('POST', `/api/tabs/${id}/split`, molfile ? { molfile } : undefined),
   numberCompounds: (ket: string) =>
     request<{ ket: string; added: string[] }>('POST', '/api/chem/number-compounds', { ket }),
+  /** A new tab from a molfile, SDF, SMILES list or CSV (several structures arrive on one grid). */
+  importFile: (filename: string, text: string) =>
+    request<ImportResult>('POST', '/api/tabs/import', { filename, text }),
+  exportStructures: (body: { format: 'sdf' | 'csv' | 'smi'; molfile: string; ket: string | null; name: string }) =>
+    request<ExportResult>('POST', '/api/chem/export', body),
   closedTabs: () => request<Tab[]>('GET', '/api/tabs/closed'),
   config: () => request<AppConfig>('GET', '/api/config'),
   newConversation: () => request<{ id: string; title: string }>('POST', '/api/conversations'),

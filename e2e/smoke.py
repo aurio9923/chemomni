@@ -10,12 +10,68 @@ from __future__ import annotations
 import json
 import sys
 import time
+from pathlib import Path
 
 from playwright.sync_api import Page, expect, sync_playwright
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
 ASPIRIN = "CC(=O)Oc1ccccc1C(=O)O"
 ETHANOL = "CCO"
+# Three records, as exported by RDKit. Ketcher stacks the records of such a file on top of each other.
+SERIES_SDF = """ethanol
+     RDKit          2D
+
+  3  2  0  0  0  0  0  0  0  0999 V2000
+   -1.2990   -0.2500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.2990   -0.2500    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  2  3  1  0
+M  END
+> <ID>
+ETHANOL
+
+$$$$
+acetic acid
+     RDKit          2D
+
+  4  3  0  0  0  0  0  0  0  0999 V2000
+   -1.2990   -0.7500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    1.5000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    1.2990   -0.7500    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  2  3  2  0
+  2  4  1  0
+M  END
+> <ID>
+ACETIC ACID
+
+$$$$
+aniline
+     RDKit          2D
+
+  7  7  0  0  0  0  0  0  0  0999 V2000
+    2.5714    0.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+    1.0714    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3214    1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.1786    1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.9286    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.1786   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3214   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  2  3  2  0
+  3  4  1  0
+  4  5  2  0
+  5  6  1  0
+  6  7  2  0
+  7  2  1  0
+M  END
+> <ID>
+ANILINE
+
+$$$$
+"""
 
 
 def wait_ready(page: Page) -> float:
@@ -369,6 +425,88 @@ def main() -> None:
         assert page.get_by_test_id("artifact-structures").count() == n_before + 1
         if len(sys.argv) > 5:
             page.screenshot(path=sys.argv[5])
+
+        # ---- M4: import and export. Ketcher stacks the records of an SDF; the server lays them on a grid ----
+        def mol_boxes() -> list[list[float]]:
+            return page.evaluate(
+                """async () => {
+                    const ket = JSON.parse(await window.chemomniKetcher.getKet())
+                    return ket.root.nodes.filter((n) => n.$ref).map((n) => {
+                        const xs = ket[n.$ref].atoms.map((a) => a.location[0])
+                        const ys = ket[n.$ref].atoms.map((a) => a.location[1])
+                        return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]
+                    })
+                }"""
+            )
+
+        def wait_for_numbers(count: int) -> None:
+            """Sample the editor until the numbers have been there for a moment (a single read can be stale)."""
+            page.evaluate(
+                """async (count) => {
+                    const t0 = performance.now()
+                    let stable = 0
+                    while (performance.now() - t0 < 10000 && stable < 5) {
+                        const ket = JSON.parse(await window.chemomniKetcher.getKet())
+                        const ok = ket.root.nodes.filter((n) => n.type === 'text').length === count
+                            && ket.root.nodes.filter((n) => n.$ref).length === count
+                        stable = ok ? stable + 1 : 0
+                        await new Promise((r) => setTimeout(r, 150))
+                    }
+                }""",
+                count,
+            )
+
+        def upload(name: str, mime: str, data: bytes) -> None:
+            page.get_by_test_id("import-input").set_input_files(files=[{"name": name, "mimeType": mime, "buffer": data}])
+
+        tabs_before = page.get_by_test_id("tab").count()
+        upload("series.sdf", "chemical/x-mdl-sdfile", SERIES_SDF.encode())
+        expect(page.get_by_text("Imported 3 structures from series.sdf, numbered 1\u20133.")).to_be_visible(timeout=15_000)
+        assert page.get_by_test_id("tab").count() == tabs_before + 1
+        expect(page.locator("[data-testid=tab][aria-selected=true]")).to_contain_text("series")
+        wait_for_numbers(3)
+        assert sorted(ket_labels()) == ["1", "2", "3"], (ket_labels(), errors)
+        boxes = mol_boxes()
+        assert len(boxes) == 3
+        for i, a in enumerate(boxes):
+            for b in boxes[i + 1 :]:
+                assert not (a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]), ("records overlap", boxes)
+
+        page.get_by_role("button", name="Export", exact=True).click()
+        with page.expect_download() as download:
+            page.get_by_test_id("export-csv").click()
+        assert download.value.suggested_filename == "series.csv", download.value.suggested_filename
+        rows = Path(download.value.path()).read_text().strip().split("\n")
+        assert rows[0].startswith("number,smiles,formula,mw,clogp,tpsa"), rows[0]
+        assert sorted((r.split(",")[0], r.split(",")[1]) for r in rows[1:]) == [
+            ("1", "CCO"),
+            ("2", "CC(=O)O"),
+            ("3", "Nc1ccccc1"),
+        ], rows  # the records come in file order: 2 columns, the first record top left
+        expect(page.get_by_text("Exported 3 structures to series.csv.")).to_be_visible()
+
+        page.get_by_role("button", name="Export", exact=True).click()
+        with page.expect_download() as download:
+            page.get_by_test_id("export-sdf").click()
+        sdf = Path(download.value.path()).read_text()
+        assert sdf.count("$$$$") == 3 and "> <Number>" in sdf and "> <mw>" in sdf, sdf[:300]
+
+        # a KET drawing goes through Ketcher itself, into a tab of its own
+        ket_text = page.evaluate("async () => await window.chemomniKetcher.getKet()")
+        tabs_before = page.get_by_test_id("tab").count()
+        upload("drawing.ket", "application/json", ket_text.encode())
+        expect(page.get_by_text("Opened drawing.ket in a new tab.")).to_be_visible(timeout=15_000)
+        assert page.get_by_test_id("tab").count() == tabs_before + 1
+        wait_for_numbers(3)
+        assert len(mol_boxes()) == 3 and sorted(ket_labels()) == ["1", "2", "3"]
+
+        # what cannot be read is reported and leaves no tab behind
+        tabs_before = page.get_by_test_id("tab").count()
+        upload("notes.txt", "text/plain", b"hello there\nnot chemistry\n")
+        expect(page.get_by_text("Could not import notes.txt: no structure could be read from notes.txt")).to_be_visible()
+        upload("photo.png", "image/png", b"\x89PNG")
+        expect(page.get_by_text("photo.png: this file type is not supported")).to_be_visible()
+        assert page.get_by_test_id("tab").count() == tabs_before
 
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
