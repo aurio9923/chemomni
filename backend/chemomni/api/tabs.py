@@ -3,10 +3,14 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from pydantic import BaseModel
 from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
+from chemomni.chem.layout import layout_smiles, split_molfile
+from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.db import ensure_default_workspace, get_session
 from chemomni.models import Tab, TabCreate, TabRead, TabUpdate, Workspace, WorkspaceRead, utcnow
 
@@ -159,6 +163,42 @@ async def restore_tab(tab_id: str, session: SessionDep) -> Tab:
         await session.commit()
         await session.refresh(tab)
     return tab
+
+
+class SplitRequest(BaseModel):
+    # The editor's current molfile for the tab. Needed when the tab is stored as KET (which only
+    # Ketcher reads); without it the saved SMILES are laid out afresh.
+    molfile: str | None = None
+
+
+@router.post("/tabs/{tab_id}/split", response_model=list[TabRead], status_code=status.HTTP_201_CREATED)
+async def split_tab(tab_id: str, session: SessionDep, body: SplitRequest | None = None) -> list[Tab]:
+    """One new tab per molecule; the original tab is kept."""
+    src = await _get_tab(session, tab_id)
+    molfile = (body.molfile if body else None) or (src.content if src.content_format == "mol" else None)
+
+    def _parts() -> list[tuple[str, str | None]]:
+        if molfile:
+            return split_molfile(molfile)
+        mols = [m for m in (parse_smiles(s)[0] for s in src.smiles_cache) if m is not None]
+        return [(layout_smiles([m]), canonical_smiles(m)) for m in mols]
+
+    parts = await run_in_threadpool(_parts)
+    if len(parts) < 2:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "the tab holds fewer than two molecules")
+    return [
+        await create_tab(
+            session,
+            src.workspace_id,
+            name=f"{src.name} #{i}",
+            content_format="mol",
+            content=block,
+            smiles=[smiles] if smiles else [],
+            source=src.source,
+            origin_message_id=src.origin_message_id,
+        )
+        for i, (block, smiles) in enumerate(parts, start=1)
+    ]
 
 
 @router.post("/tabs/{tab_id}/duplicate", response_model=TabRead, status_code=status.HTTP_201_CREATED)

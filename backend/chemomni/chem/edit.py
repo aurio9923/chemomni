@@ -91,8 +91,13 @@ def _rdkit_depictor() -> Iterator[None]:
         rdDepictor.SetPreferCoordGen(previous)
 
 
-def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
+def align(
+    new: Chem.Mol, template: Chem.Mol, mcs_timeout: int = MCS_TIMEOUT_S, *, any_element: bool = False
+) -> tuple[Chem.Mol, list[int]]:
     """Lay out ``new`` on ``template``'s coordinates through their MCS. Returns (mol, changed atoms).
+
+    ``any_element`` matches atoms and bonds by topology only, so a ring in which one atom changed
+    (phenyl to pyridine) still keeps the template's ring; the atoms whose element differs count as changed.
 
     The template is first brought to RDKit's bond length so the atoms RDKit adds match the
     constrained ones, and the result is scaled back to the template's (the user's) bond length.
@@ -103,11 +108,11 @@ def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
     reference = _scale(template, factor)
     mcs = rdFMCS.FindMCS(
         [reference, new],
-        timeout=MCS_TIMEOUT_S,
+        timeout=mcs_timeout,
         ringMatchesRingOnly=True,
         completeRingsOnly=True,
-        atomCompare=rdFMCS.AtomCompare.CompareElements,
-        bondCompare=rdFMCS.BondCompare.CompareOrder,
+        atomCompare=rdFMCS.AtomCompare.CompareAny if any_element else rdFMCS.AtomCompare.CompareElements,
+        bondCompare=rdFMCS.BondCompare.CompareAny if any_element else rdFMCS.BondCompare.CompareOrder,
     )
     matched: set[int] = set()
     if mcs.numAtoms >= 2:
@@ -119,7 +124,7 @@ def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
             try:
                 with _rdkit_depictor():
                     rdDepictor.GenerateDepictionMatching2DStructure(new, reference, atomMap=atom_map)
-                matched = set(n_match)
+                matched = {n for t, n in atom_map if _same_element(reference, t, new, n)}
             except ValueError:
                 matched = set()
     if not matched:
@@ -127,6 +132,22 @@ def _align(new: Chem.Mol, template: Chem.Mol) -> tuple[Chem.Mol, list[int]]:
             rdDepictor.Compute2DCoords(new)
     changed = [a.GetIdx() for a in new.GetAtoms() if a.GetIdx() not in matched]
     return _scale(new, 1 / factor), changed
+
+
+def parent_template(parent: Chem.Mol, molfile: str | None) -> tuple[Chem.Mol, int | None, list[Chem.Mol]]:
+    """The parent as drawn on the user's tab if it is there, else a fresh layout.
+
+    Returns (template, index of the matching fragment or None, all fragments of the tab).
+    """
+    parent_can = canonical_smiles(parent)
+    fragments = _fragments_from_molfile(molfile)
+    match_idx = next((i for i, f in enumerate(fragments) if _safe_canonical(f) == parent_can), None)
+    template = fragments[match_idx] if match_idx is not None else _with_coords(parent)
+    return template, match_idx, fragments
+
+
+def _same_element(a: Chem.Mol, i: int, b: Chem.Mol, j: int) -> bool:
+    return a.GetAtomWithIdx(i).GetAtomicNum() == b.GetAtomWithIdx(j).GetAtomicNum()
 
 
 def edit(parent_smiles: str, new_smiles: str, molfile: str | None = None) -> EditResult:
@@ -140,13 +161,8 @@ def edit(parent_smiles: str, new_smiles: str, molfile: str | None = None) -> Edi
     if parent_can == new_can:
         return EditResult(ok=False, errors=["the new structure is identical to the parent"])
 
-    fragments = _fragments_from_molfile(molfile)
-    match_idx = next(
-        (i for i, f in enumerate(fragments) if _safe_canonical(f) == parent_can),
-        None,
-    )
-    template = fragments[match_idx] if match_idx is not None else _with_coords(parent)
-    aligned, changed = _align(new, template)
+    template, match_idx, fragments = parent_template(parent, molfile)
+    aligned, changed = align(new, template)
 
     document = None
     if match_idx is not None:

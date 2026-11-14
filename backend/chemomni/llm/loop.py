@@ -12,7 +12,8 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import chemomni.tools.chem_tools
-import chemomni.tools.edit_tools  # noqa: F401
+import chemomni.tools.edit_tools
+import chemomni.tools.generate_tools  # noqa: F401
 from chemomni.llm.context import Snapshot, build_messages
 from chemomni.llm.provider import Done, LLMError, LLMProvider, TextDelta, ToolCall
 from chemomni.models import Artifact, Conversation, Message, ToolCallRecord, utcnow
@@ -33,6 +34,7 @@ async def run_turn(
     user_text: str,
     snapshot: Snapshot,
     context_budget: int,
+    services: dict[str, Any] | None = None,
 ) -> AsyncIterator[Event]:
     user = Message(conversation_id=conversation.id, role="user", content=[{"type": "text", "text": user_text}])
     assistant = Message(conversation_id=conversation.id, role="assistant", content=[], model=provider.model)
@@ -139,6 +141,7 @@ async def run_turn(
                         workspace_id=conversation.workspace_id,
                         session=session,
                         emit_event=lambda name, data: pending.append((name, data)),
+                        services=services or {},
                     )
                 tool_calls_used += 1
                 session.add(
@@ -192,6 +195,7 @@ async def _run_tool(
     workspace_id: str = "",
     session: Any = None,
     emit_event: Any = None,
+    services: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], bool, int]:
     t0 = time.perf_counter()
     tool = REGISTRY.get(call.name)
@@ -210,6 +214,7 @@ async def _run_tool(
                 snapshot=snapshot.model_dump(),
                 emit_event=emit_event or (lambda name, data: None),
                 session=session,
+                services=services or {},
             )
             try:
                 async with asyncio.timeout(TOOL_TIMEOUT_S):

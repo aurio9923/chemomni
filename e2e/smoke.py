@@ -227,6 +227,100 @@ def main() -> None:
         )
         assert selected == [first_el], (selected, first_el)
 
+        # ---- M3: analog series on a grid tab, sortable table, split into one tab per molecule ----
+        def editor_components() -> int:
+            return len([s for s in editor_smiles().split(".") if s])
+
+        n_tabs = tabs.count()
+        send("suggest 5 analogs")  # fake: 5 valid + duplicate + parent + invalid
+        expect(tabs).to_have_count(n_tabs + 1)
+        active_tab = page.locator("[data-testid=tab][aria-selected=true]")
+        expect(active_tab).to_contain_text("Analogs")
+        grid = page.get_by_test_id("artifact-grid").last
+        expect(grid.get_by_test_id("grid-card")).to_have_count(5)
+        expect(grid).to_contain_text("3 rejected")
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 5", polling=200, timeout=5_000
+        )
+        # sort by MW, descending: the chloro analog (#5) is the heaviest
+        mw = grid.get_by_role("button", name="MW", exact=True)
+        mw.click()
+        mw.click()
+        expect(grid.locator("tbody tr").first.locator("td").first).to_have_text("5")
+        if len(sys.argv) > 3:
+            page.screenshot(path=sys.argv[3])
+
+        active_tab.hover()
+        active_tab.get_by_role("button", name="Split Analogs into one tab per molecule").click()
+        expect(tabs).to_have_count(n_tabs + 1 + 5)
+        expect(active_tab).to_contain_text("Analogs #1")
+        page.wait_for_function(
+            "async () => { const s = await window.chemomniBridge.getSmiles(); return s && !s.includes('.') }",
+            polling=200,
+            timeout=5_000,
+        )
+        assert editor_components() == 1
+
+        # ---- select a phenyl in the editor, ask for a pyridine: every position at once ----
+        def draw_and_select_phenyl(smiles: str, formula: str) -> None:
+            page.get_by_role("button", name="New tab", exact=True).click()
+            page.wait_for_timeout(300)
+            set_structure(page, smiles)
+            expect(page.get_by_test_id("property-bar")).to_contain_text(formula, timeout=5_000)
+            page.wait_for_timeout(800)  # autosave
+            ring_size = page.evaluate(
+                """() => {
+                    const k = window.chemomniKetcher
+                    const adj = new Map()
+                    k.editor.struct().bonds.forEach((b) => {
+                        for (const [x, y] of [[b.begin, b.end], [b.end, b.begin]]) {
+                            if (!adj.has(x)) adj.set(x, [])
+                            adj.get(x).push(y)
+                        }
+                    })
+                    let ring = null
+                    const walk = (start, cur, path) => {
+                        if (ring) return
+                        if (path.length === 6) {
+                            if (adj.get(cur).includes(start)) ring = [...path]
+                            return
+                        }
+                        for (const n of adj.get(cur)) if (!path.includes(n)) walk(start, n, [...path, n])
+                    }
+                    adj.forEach((_, id) => walk(id, id, [id]))
+                    k.editor.selection({ atoms: ring })
+                    return ring ? ring.length : 0
+                }"""
+            )
+            assert ring_size == 6
+
+        draw_and_select_phenyl("CC(=O)Nc1ccccc1", "C8H9NO")
+        n_tabs = tabs.count()
+        send("make the selected phenyl a pyridine")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(active_tab).to_contain_text("Pyridine scan")
+        scan_grid = page.get_by_test_id("artifact-grid").last
+        expect(scan_grid.get_by_test_id("grid-card")).to_have_count(3)
+        for position in ("ortho", "meta", "para"):
+            expect(scan_grid).to_contain_text(f"N at {position}")
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 3", polling=200, timeout=5_000
+        )
+        if len(sys.argv) > 4:
+            page.screenshot(path=sys.argv[4])
+
+        # one fluorine AND one methyl on the five CH of a phenyl: 20 placements, 10 distinct compounds
+        draw_and_select_phenyl("COC(=O)c1ccccc1", "C8H8O2")
+        n_tabs = tabs.count()
+        send("monofluorinate and monomethylate the selected phenyl")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(active_tab).to_contain_text("F + Me scan")
+        combo_grid = page.get_by_test_id("artifact-grid").last
+        expect(combo_grid.get_by_test_id("grid-card")).to_have_count(10)
+        page.wait_for_function(
+            "async () => (await window.chemomniBridge.getSmiles()).split('.').length === 10", polling=200, timeout=5_000
+        )
+
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
         browser.close()

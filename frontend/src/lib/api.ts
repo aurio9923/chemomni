@@ -41,6 +41,9 @@ export const api = {
   deleteTab: (id: string) => request<void>('DELETE', `/api/tabs/${id}`),
   restoreTab: (id: string) => request<Tab>('POST', `/api/tabs/${id}/restore`),
   duplicateTab: (id: string) => request<Tab>('POST', `/api/tabs/${id}/duplicate`),
+  /** One new tab per molecule. Pass the editor's molfile for the active tab (KET is not readable server-side). */
+  splitTab: (id: string, molfile: string | null) =>
+    request<Tab[]>('POST', `/api/tabs/${id}/split`, molfile ? { molfile } : undefined),
   closedTabs: () => request<Tab[]>('GET', '/api/tabs/closed'),
   config: () => request<AppConfig>('GET', '/api/config'),
   newConversation: () => request<{ id: string; title: string }>('POST', '/api/conversations'),

@@ -54,6 +54,9 @@ class Settings(BaseSettings):
             return self.openai_api == "responses"
         return not self.openai_base_url
 
+    # name_to_structure falls back to PubChem (online). Turn off to keep compound names local.
+    pubchem: bool = Field(default=True, alias="CHEMOMNI_PUBCHEM")
+
     db_path: Path = Field(default=BACKEND_DIR / "data" / "chemomni.sqlite", alias="CHEMOMNI_DB")
     context_budget: int = Field(default=24000, alias="CHEMOMNI_CONTEXT_BUDGET")
     static_dir: Path | None = Field(default=None, alias="CHEMOMNI_STATIC_DIR")

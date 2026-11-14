@@ -24,6 +24,7 @@ class ToolContext:
     # UI events (tab.create, tab.replace, ...) are queued and streamed after the tool finishes.
     emit_event: Callable[[str, dict[str, Any]], None] = lambda name, data: None
     session: Any = None  # AsyncSession of the current turn
+    services: dict[str, Any] = field(default_factory=dict)  # app-wide helpers, e.g. "names" (NameResolver)
 
 
 @dataclass(frozen=True)

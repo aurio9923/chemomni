@@ -99,10 +99,33 @@ export interface DiffPayload {
   after: DiffSide
 }
 
+/** One accepted structure of `propose_structures` (full property row plus grid data). */
+export interface GridItem extends PropertyRow {
+  index: number
+  rationale: string
+  /** Tanimoto to the parent (Morgan r=2, 2048 bits); null without a parent. */
+  similarity: number | null
+}
+
+export interface GridPayload {
+  title: string
+  call_id: string
+  tab_id: string
+  tab_name: string
+  parent: { smiles: string; svg: string | null } | null
+  items: GridItem[]
+  rejected: { smiles: string; reason: string }[]
+}
+
 export type Artifact =
   | { id: string; type: 'table'; payload: { title: string; call_id: string; rows: PropertyRow[] } }
   | { id: string; type: 'diff'; payload: DiffPayload }
-  | { id: string; type: 'structure_set'; payload: { title: string; call_id: string; items: StructureItem[] } }
+  | {
+      id: string
+      type: 'structure_set'
+      payload: { title: string; call_id: string; items: StructureItem[]; tab_id?: string }
+    }
+  | { id: string; type: 'grid'; payload: GridPayload }
 
 export type Part =
   | { kind: 'text'; text: string }

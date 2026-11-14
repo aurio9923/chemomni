@@ -17,7 +17,10 @@ practical knowledge needed to implement it. Update it when you learn something t
   Ruff uses a selected rule set (E, F, I, B, UP, SIM, RUF), not `ALL`. Type checking is optional.
 - Frontend: `pnpm tsc --noEmit`, `pnpm vitest run`, `pnpm build`.
 - Tests and E2E never call a real LLM: set `CHEMOMNI_PROVIDER=fake` and script the
-  `FakeProvider`.
+  `FakeProvider`. Its rule-based mode reacts to keywords (`pyridine`, `fluor`, `analog`, `replace`,
+  `methyl`, `highlight`); E2E relies on them.
+- Run E2E with the preinstalled Playwright (`python3 e2e/smoke.py <url> <png> [grid.png]`);
+  `uv run --with playwright` pulls a newer version that cannot find the installed browser.
 - Commits are small; after M0, work on feature branches and open PRs.
 
 ## Performance rules (PLAN §10)
@@ -184,6 +187,28 @@ async for chunk in stream:
 - Coordinates aligned to a parent: `rdFMCS.FindMCS([parent, child], ringMatchesRingOnly=True,
   completeRingsOnly=True, timeout=2)` then `AllChem.GenerateDepictionMatching2DStructure`;
   fall back to `rdDepictor.Compute2DCoords`.
+- AI tabs use Ketcher's scale (mean bond length 1.0): `chem/layout.py` (`to_ketcher_scale`, `grid`,
+  `layout_smiles`). `chem/generate.py` aligns every proposal to the parent's template and shifts all of
+  them by the template's centre, so the shared core sits at the same spot of each grid cell. `align()`
+  already returns the template's scale; rescaling its output again moves the core slightly.
+- Position scans (`chem/scan.py`, tool `scan_positions`): the LLM only picks the changes (`substitute` a
+  group for H, or `replace_atom` to an element; `changes` takes up to three and they are combined: every
+  way of giving each change its own atom, identical changes not counted in both orders, results merged by
+  canonical SMILES). Combinations must never be written by the model: "F and Me on a phenyl" came out as
+  8 of 10 when it did (see `test_fluoro_plus_methyl_on_a_phenyl_misses_nothing`, whose expected set is
+  built by plain loops, not by `scan`). RDKit enumerates positions on the selected atoms
+  (molfile numbers, mapped through an `_orig` atom property so removed explicit H cannot shift them),
+  merges symmetric results and names ortho/meta/para for a ring with one attachment point. Substituted
+  aromatic atoms (3 connections) are not positions for an element swap. For a swap the grid layout uses
+  `align(..., any_element=True)` (topology-only MCS) so the ring keeps the parent's drawing and only the
+  changed atom is highlighted. All generating tools end in `present_candidates()` (validate, grid tab, card).
+- `split_molfile` does not sanitize (explicit H and odd valences survive). KET tabs cannot be read by
+  RDKit: the client sends the editor's molfile with `POST /api/tabs/{id}/split`.
+- Names: `chem/names.py` tries OPSIN (`uv sync --extra opsin`, needs Java; `py2opsin` returns `""`
+  and warns on failure) and then PubChem PUG REST. Since PubChem's 2025 rename the isomeric property is
+  `SMILES` (`ConnectivitySMILES` has no stereo); read `IsomericSMILES` as a fallback. Keep requests at
+  ≤ 5/s (one `NameResolver` per app in `app.state.services["names"]`). Tests mock it with
+  `httpx.MockTransport`; the sandbox cannot reach PubChem.
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.
