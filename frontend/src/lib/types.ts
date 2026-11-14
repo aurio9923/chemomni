@@ -76,8 +76,32 @@ export interface PropertyRow extends StructureItem {
   inchikey: string | null
 }
 
+export interface DiffSide {
+  ok: boolean
+  smiles: string
+  formula: string
+  mw: number
+  clogp: number
+  tpsa: number
+  hbd: number
+  hba: number
+  svg: string | null
+  molfile?: string | null
+}
+
+export interface DiffPayload {
+  title: string
+  call_id: string
+  applied: 'new_tab' | 'replaced' | 'new_tab_fallback'
+  tab_id: string
+  tab_name: string
+  before: DiffSide
+  after: DiffSide
+}
+
 export type Artifact =
   | { id: string; type: 'table'; payload: { title: string; call_id: string; rows: PropertyRow[] } }
+  | { id: string; type: 'diff'; payload: DiffPayload }
   | { id: string; type: 'structure_set'; payload: { title: string; call_id: string; items: StructureItem[] } }
 
 export type Part =

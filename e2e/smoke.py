@@ -153,6 +153,80 @@ def main() -> None:
         expect(page.get_by_test_id("artifact-table")).to_contain_text("C2H6O", timeout=5_000)
         expect(page.get_by_test_id("property-bar")).to_contain_text("C2H6O", timeout=5_000)
 
+        # ---- M2: edit into a new tab, replace + undo, selection numbering, highlight ----
+        def editor_smiles() -> str:
+            return page.evaluate("async () => window.chemomniBridge.getSmiles()")
+
+        def send(text: str) -> None:
+            n_before = page.get_by_test_id("assistant-message").count()
+            box.fill(text)
+            box.press("Enter")
+            expect(page.get_by_test_id("assistant-message")).to_have_count(n_before + 1)
+            expect(page.get_by_test_id("answered-by").nth(n_before)).to_be_visible(timeout=15_000)
+
+        box = page.get_by_role("textbox", name="Message")
+        set_structure(page, ASPIRIN)
+        expect(page.get_by_test_id("property-bar")).to_contain_text("C9H8O4", timeout=5_000)
+        page.wait_for_timeout(800)  # autosave
+        aspirin_tab = page.locator("[data-testid=tab][aria-selected=true]").inner_text()
+        original = editor_smiles()
+
+        n_tabs = tabs.count()
+        send("add a methyl")
+        expect(tabs).to_have_count(n_tabs + 1)
+        expect(page.locator("[data-testid=tab][aria-selected=true]")).to_contain_text("Homologue")
+        expect(page.get_by_test_id("artifact-diff").last).to_contain_text("C10H10O4")
+        page.wait_for_function("async () => (await window.chemomniBridge.getSmiles()).length > 0", polling=200)
+        assert editor_smiles() != original
+
+        # back to the aspirin tab, replace in place, then undo
+        tabs.filter(has_text=aspirin_tab).first.click()
+        page.wait_for_function(
+            "async (s) => (await window.chemomniBridge.getSmiles()) === s", arg=original, polling=200, timeout=5_000
+        )
+        send("replace it with the homologue")
+        expect(tabs).to_have_count(n_tabs + 1)  # no extra tab
+        toast = page.get_by_test_id("toast").filter(has_text="Replaced")
+        expect(toast).to_be_visible()
+        page.wait_for_function(
+            "async (s) => (await window.chemomniBridge.getSmiles()) !== s", arg=original, polling=200, timeout=5_000
+        )
+        toast.get_by_role("button", name="Undo").click()
+        page.wait_for_function(
+            "async (s) => (await window.chemomniBridge.getSmiles()) === s", arg=original, polling=200, timeout=5_000
+        )
+
+        # selection is sent as molfile atom numbers that point at the same element
+        page.evaluate(
+            """() => {
+                const k = window.chemomniKetcher
+                let oxygen = null
+                k.editor.struct().atoms.forEach((a, id) => { if (oxygen === null && a.label === 'O') oxygen = id })
+                k.editor.selection({ atoms: [oxygen] })
+            }"""
+        )
+        with page.expect_request("**/api/chat") as req:
+            send("highlight the first atom")
+        snap = json.loads(req.value.post_data)["snapshot"]["active_tab"]
+        assert len(snap["selection_atoms"]) == 1, snap["selection_atoms"]
+        n = snap["selection_atoms"][0]
+        lines = snap["molfile"].splitlines()
+        start = next(i for i, ln in enumerate(lines) if "BEGIN ATOM" in ln)
+        end = next(i for i, ln in enumerate(lines) if "END ATOM" in ln)
+        atom_lines = lines[start + 1 : end]
+        element = next(ln.split()[3] for ln in atom_lines if ln.split()[2] == str(n))
+        assert element == "O", (n, element)
+        # the fake assistant highlights molfile atom 1: Ketcher must select the atom with that element
+        first_el = atom_lines[0].split()[3]
+        selected = page.evaluate(
+            """() => {
+                const k = window.chemomniKetcher
+                const ids = k.editor.selection()?.atoms ?? []
+                return ids.map((id) => k.editor.struct().atoms.get(id).label)
+            }"""
+        )
+        assert selected == [first_el], (selected, first_el)
+
         page.screenshot(path=sys.argv[2] if len(sys.argv) > 2 else "smoke.png")
         assert not errors, errors
         browser.close()

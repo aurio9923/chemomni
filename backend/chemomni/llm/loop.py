@@ -11,7 +11,8 @@ from typing import Any
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-import chemomni.tools.chem_tools  # noqa: F401  (registers tools)
+import chemomni.tools.chem_tools
+import chemomni.tools.edit_tools  # noqa: F401
 from chemomni.llm.context import Snapshot, build_messages
 from chemomni.llm.provider import Done, LLMError, LLMProvider, TextDelta, ToolCall
 from chemomni.models import Artifact, Conversation, Message, ToolCallRecord, utcnow
@@ -130,7 +131,15 @@ async def run_turn(
                         0,
                     )
                 else:
-                    result, ok, duration_ms = await _run_tool(call, assistant.id, snapshot, emit_artifact)
+                    result, ok, duration_ms = await _run_tool(
+                        call,
+                        assistant.id,
+                        snapshot,
+                        emit_artifact,
+                        workspace_id=conversation.workspace_id,
+                        session=session,
+                        emit_event=lambda name, data: pending.append((name, data)),
+                    )
                 tool_calls_used += 1
                 session.add(
                     ToolCallRecord(
@@ -179,6 +188,10 @@ async def _run_tool(
     message_id: str,
     snapshot: Snapshot,
     emit_artifact: Any,
+    *,
+    workspace_id: str = "",
+    session: Any = None,
+    emit_event: Any = None,
 ) -> tuple[dict[str, Any], bool, int]:
     t0 = time.perf_counter()
     tool = REGISTRY.get(call.name)
@@ -190,11 +203,13 @@ async def _run_tool(
             result = {"ok": False, "errors": ["arguments must be a JSON object"]}
         else:
             ctx = ToolContext(
-                workspace_id="",
+                workspace_id=workspace_id,
                 message_id=message_id,
                 call_id=call.id,
                 emit_artifact=lambda kind, payload: emit_artifact(call.id, kind, payload),
                 snapshot=snapshot.model_dump(),
+                emit_event=emit_event or (lambda name, data: None),
+                session=session,
             )
             try:
                 async with asyncio.timeout(TOOL_TIMEOUT_S):

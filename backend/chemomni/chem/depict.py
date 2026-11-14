@@ -42,3 +42,20 @@ def molblock(smiles: str) -> str | None:
     """V3000 molfile with 2D coordinates, used to open a structure in a new tab."""
     mol = _prepare(smiles)
     return None if mol is None else Chem.MolToV3KMolBlock(mol)
+
+
+@lru_cache(maxsize=512)
+def depict_molblock(molblock: str, width: int = 280, height: int = 200, highlight: tuple[int, ...] = ()) -> str | None:
+    """SVG from a molfile, keeping its 2D coordinates (used for before/after cards)."""
+    mol = Chem.MolFromMolBlock(molblock)
+    if mol is None:
+        return None
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+    opts = drawer.drawOptions()
+    opts.clearBackground = False
+    opts.padding = 0.08
+    opts.bondLineWidth = 1.5
+    opts.addStereoAnnotation = True
+    rdMolDraw2D.PrepareAndDrawMolecule(drawer, mol, highlightAtoms=list(highlight) or None)
+    drawer.FinishDrawing()
+    return drawer.GetDrawingText()

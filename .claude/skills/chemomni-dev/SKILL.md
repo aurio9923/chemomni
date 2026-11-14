@@ -76,6 +76,11 @@ document is being loaded with `setMolecule` can stay pending forever. `bridge.ts
 serializes every operation through one queue and retries reads with a 1.5 s timeout. Never call
 the Ketcher instance directly from components or tests; tests use `window.chemomniBridge`.
 
+**Atom numbering (verified):** the LLM and backend use 1-based molfile atom numbers; Ketcher
+selection uses struct atom ids. Molfiles come from Indigo and can be ordered per fragment, so
+`bridge.ts` matches atoms by element and position (Ketcher's y axis is flipped) — see
+`matchAtoms`, `selectionAsMolfileAtoms`, `selectMolfileAtoms`. Never map by index.
+
 Tab switching with one shared instance:
 
 ```ts
@@ -173,6 +178,9 @@ async for chunk in stream:
 
 - Use the vendored `rdkit` and `cheminformatics` skills for API details.
 - Fingerprints: `rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)`.
+- Ketcher molfiles use bond length ~1.0, RDKit's depictor 1.5, CoordGen 1.0. `chem/edit.py` scales the
+  template to 1.5, matches with RDKit's depictor (CoordGen forced off — depict.py turns it on
+  globally), then scales back. Mixing scales gives long new bonds and bent rings (seen in real use).
 - Coordinates aligned to a parent: `rdFMCS.FindMCS([parent, child], ringMatchesRingOnly=True,
   completeRingsOnly=True, timeout=2)` then `AllChem.GenerateDepictionMatching2DStructure`;
   fall back to `rdDepictor.Compute2DCoords`.

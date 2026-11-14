@@ -44,9 +44,17 @@ class FakeProvider:
 
     @staticmethod
     def _rule_based(messages: list[Message]) -> ScriptTurn:
+        """Keywords in the user's message pick a tool: 'replace' / 'methyl' edit the first molecule,
+        'highlight' selects atom 1, anything else computes properties."""
         last = messages[-1]
         if last["role"] == "tool":
             result = json.loads(last["content"])
+            if not result.get("ok"):
+                return [{"text": "That did not work: " + "; ".join(result.get("errors", []))}]
+            if "applied" in result:
+                return [{"text": f"Done ({result['applied']}): {result['formula']} in tab {result['tab_name']}."}]
+            if "atoms" in result and "rows" not in result:
+                return [{"text": f"Highlighted atom(s) {result['atoms']}."}]
             rows = [r for r in result.get("rows", []) if r.get("ok")]
             if not rows:
                 return [{"text": "I could not compute properties for that structure."}]
@@ -65,4 +73,16 @@ class FakeProvider:
         if not match:
             return [{"text": "Draw a structure on the active tab first, then ask again."}]
         smiles = [line[2:].strip() for line in match.group(1).strip().splitlines()]
+        text = str(last.get("content", "")).lower()
+        if "replace" in text or "methyl" in text:
+            target = "replace_active" if "replace" in text else "new_tab"
+            args = {
+                "parent_smiles": smiles[0],
+                "new_smiles": "C" + smiles[0],
+                "description": "Homologue",
+                "target": target,
+            }
+            return [{"tool": "edit_structure", "args": args}]
+        if "highlight" in text:
+            return [{"tool": "highlight_atoms", "args": {"atoms": [1]}}]
         return [{"tool": "compute_properties", "args": {"smiles": smiles}}]
