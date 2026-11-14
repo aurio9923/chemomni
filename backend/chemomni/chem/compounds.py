@@ -187,8 +187,10 @@ class CompoundTable:
         if known:
             return None, f"no structure is numbered {tokens[0]} on the active tab (numbered: {known})"
         return None, (
-            f"no structure is numbered {tokens[0]}: the active tab has no numbers. Ask the user to write a "
-            "number next to each structure with the text tool, or to press 'Number compounds'"
+            f"no structure is numbered {tokens[0]}: the active tab has no numbers, so no number can be used here. "
+            "Pass the structure as SMILES instead (the active tab's are listed in <active_tab>). Only if the user "
+            "asked for a numbered compound, tell them to write a number next to each structure with the text tool "
+            "or to press 'Number compounds'"
         )
 
 

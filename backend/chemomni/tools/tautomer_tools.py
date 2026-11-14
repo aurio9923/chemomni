@@ -17,7 +17,7 @@ from chemomni.chem import tautomers as taut
 from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.chem.scan import target_from_selection
 from chemomni.tools.generate_tools import _single_molecule, present_candidates
-from chemomni.tools.refs import smiles_for
+from chemomni.tools.refs import WHEN_NUMBERED, smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 MAX_SHOWN = 20  # one grid; more are counted and reported
@@ -27,7 +27,7 @@ class TautomersIn(BaseModel):
     ref: str | None = Field(
         None,
         description="Number of the compound in the editor to work on (see <compounds>), e.g. '3'. Omit to use "
-        "the molecule that holds the user's selection, or the only molecule on the tab.",
+        "the molecule that holds the user's selection, or the only molecule on the tab." + WHEN_NUMBERED,
     )
     smiles: str | None = Field(
         None,

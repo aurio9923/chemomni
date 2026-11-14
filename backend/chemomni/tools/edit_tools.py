@@ -12,7 +12,7 @@ from chemomni.chem.depict import depict_molblock
 from chemomni.chem.edit import EditResult, edit
 from chemomni.chem.props import canonical_smiles, compute_light, parse_smiles
 from chemomni.models import Tab, TabRead, utcnow
-from chemomni.tools.refs import smiles_for
+from chemomni.tools.refs import WHEN_NUMBERED, smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 
@@ -33,7 +33,9 @@ class EditStructureIn(BaseModel):
         None, description="The molecule being edited, as it appears on the active tab. Or use parent_ref."
     )
     parent_ref: str | None = Field(
-        None, description="Number of the compound being edited in the editor (see <compounds>), instead of SMILES."
+        None,
+        description="Number of the compound being edited in the editor (see <compounds>), instead of SMILES."
+        + WHEN_NUMBERED,
     )
     new_smiles: str = Field(..., description="The complete edited molecule (whole SMILES, not a fragment).")
     description: str = Field(..., max_length=80, description="Short title of the change, e.g. '4-F aspirin'.")

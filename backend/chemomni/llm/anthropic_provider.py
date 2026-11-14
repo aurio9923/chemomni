@@ -19,7 +19,9 @@ from anthropic import AsyncAnthropic
 
 from chemomni.llm.provider import Done, LLMError, LLMEvent, Message, TextDelta, ToolCall, ToolSpecJSON
 
-MAX_TOKENS = 4096
+# One propose_structures call with five candidates (long SMILES plus a reason each) takes 2.3-3.5k output tokens,
+# so 4096 cut off 2 of 6 claude-haiku-5-5 answers in the middle of the tool call. Streaming has no timeout problem.
+MAX_TOKENS = 16000
 
 
 def _loads(arguments: str) -> dict[str, Any]:

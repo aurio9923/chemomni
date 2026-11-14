@@ -27,14 +27,18 @@ class FakeProvider:
     async def stream(self, messages: list[Message], tools: list[ToolSpecJSON]) -> AsyncIterator[LLMEvent]:
         self.calls.append({"messages": messages, "tools": tools})
         events = self._next_scripted() if self._script is not None else self._rule_based(messages)
+        finish = "stop"
         for ev in events:
+            if "finish" in ev:  # {"finish": "max_tokens"}: the turn ends like a model that ran out of tokens
+                finish = ev["finish"]
+                continue
             if "text" in ev:
                 # stream in small pieces like a real model
                 for piece in re.findall(r".{1,12}", ev["text"], flags=re.S):
                     yield TextDelta(piece)
             elif "tool" in ev:
                 yield ToolCall(ev.get("id", f"call_{len(self.calls)}"), ev["tool"], json.dumps(ev["args"]))
-        yield Done(finish_reason="stop", usage={"prompt_tokens": 0, "completion_tokens": 0})
+        yield Done(finish_reason=finish, usage={"prompt_tokens": 0, "completion_tokens": 0})
 
     def _next_scripted(self) -> ScriptTurn:
         assert self._script is not None

@@ -11,7 +11,7 @@ from starlette.concurrency import run_in_threadpool
 from chemomni.chem.depict import depict, depict_molblock, molblock
 from chemomni.chem.props import canonical_smiles, compute_properties, parse_smiles
 from chemomni.chem.similarity import match_compounds, substructure, tanimoto
-from chemomni.tools.refs import compound_for, smiles_for, table_of
+from chemomni.tools.refs import WHEN_NUMBERED, compound_for, smiles_for, table_of
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 SmilesList = Field(..., min_length=1, max_length=50, description="SMILES strings, one per molecule.")
@@ -33,7 +33,7 @@ RefsField = Field(
     default_factory=list,
     max_length=50,
     description="Numbers the user wrote next to structures in the editor, e.g. ['1', '3a'] (see <compounds>). "
-    "Prefer these to copying SMILES.",
+    "Prefer these to copying SMILES." + WHEN_NUMBERED,
 )
 
 
@@ -125,8 +125,12 @@ def _centers(mol: Any) -> list[tuple[int, str]]:
 class SimilarityIn(BaseModel):
     smiles_a: str | None = Field(None, description="First molecule (SMILES), or use ref_a.")
     smiles_b: str | None = Field(None, description="Second molecule (SMILES), or use ref_b.")
-    ref_a: str | None = Field(None, description="Number of the first compound in the editor (see <compounds>).")
-    ref_b: str | None = Field(None, description="Number of the second compound in the editor.")
+    ref_a: str | None = Field(
+        None, description="Number of the first compound in the editor (see <compounds>)." + WHEN_NUMBERED
+    )
+    ref_b: str | None = Field(
+        None, description="Number of the second compound in the editor (see <compounds>)." + WHEN_NUMBERED
+    )
 
     @model_validator(mode="after")
     def _both(self) -> SimilarityIn:
@@ -171,11 +175,14 @@ class SubstructureIn(BaseModel):
     query_ref: str | None = Field(
         None,
         description="Number of a compound in the editor (see <compounds>), e.g. '1', used as the query. The query "
-        "is the drawing itself, exactly as drawn (any-atom and atom-list atoms included), so no SMARTS is needed.",
+        "is the drawing itself, exactly as drawn (any-atom and atom-list atoms included), so no SMARTS is needed."
+        + WHEN_NUMBERED,
     )
     smiles: list[str] = Field(default_factory=list, max_length=50, description="Molecules to search, as SMILES.")
     target_refs: list[str] = Field(
-        default_factory=list, max_length=50, description="Numbers of the compounds in the editor to search."
+        default_factory=list,
+        max_length=50,
+        description="Numbers of the compounds in the editor to search (see <compounds>)." + WHEN_NUMBERED,
     )
 
     @model_validator(mode="after")

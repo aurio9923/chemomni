@@ -140,6 +140,11 @@ Responses adapter converts them (`system` → `developer`, tool calls → `funct
 messages go to the `system` parameter (static prompt first with `cache_control`), tool calls
 become `tool_use` blocks, tool results become `tool_result` blocks in one user turn. The
 anthropic SDK (2.x) uses its own `httpx2` fork: test with `httpx2.MockTransport`, not `httpx`.
+`MAX_TOKENS` is 16000: one `propose_structures` call with five candidates takes 2.3-3.5k output tokens, and at
+4096 two of six claude-haiku-5-5 answers were cut off inside the tool call. A tool call cut off that way never reaches
+the loop (half a JSON object is dropped), so `loop.py` looks at the finish reason instead (`OUTPUT_LIMIT_REASONS`:
+`max_tokens`, `length`, `max_output_tokens`) and ends the turn with an `error` event; without that the answer is empty
+and nothing says why. `FakeProvider` scripts end that way with `{"finish": "max_tokens"}`.
 
 ### OpenAI-compatible streaming with tool calls (Chat Completions)
 

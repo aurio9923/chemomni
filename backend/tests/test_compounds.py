@@ -96,7 +96,23 @@ def test_a_tab_without_numbers_tells_the_model_what_the_user_can_do() -> None:
     assert [c.label for c in table.compounds] == [None, None, None]
     _, err = table.resolve("1")
     assert err is not None and "Number compounds" in err
+    # the model must not stop here: it is told to carry on with the structure's SMILES (it gave up before)
+    assert "SMILES instead" in err
     assert _table("").labelled == []  # no KET at all: structures are still listed
+
+
+def test_every_ref_argument_says_when_it_may_be_used() -> None:
+    """The model passed parent_ref="1" on tabs without numbers (5 of 16 edit calls); the argument itself must say no."""
+    from chemomni.tools.registry import specs
+
+    checked = []
+    for spec in specs():
+        for name, prop in spec["function"]["parameters"].get("properties", {}).items():
+            if name in ("ref", "refs", "query_ref", "parent_ref", "ref_a", "ref_b", "target_refs"):
+                checked.append((spec["function"]["name"], name))
+                text = prop.get("description") or prop.get("items", {}).get("description", "")
+                assert "<compounds>" in text and "only when" in text.lower(), (spec["function"]["name"], name, text)
+    assert len(checked) >= 11  # all of them were found, not none
 
 
 # ------------------------------------------------------------------------------- ambiguity

@@ -14,7 +14,7 @@ from chemomni.chem.bioisostere_rules import Rule, rules
 from chemomni.chem.props import canonical_smiles
 from chemomni.chem.scan import Target, target_from_selection, target_from_smarts
 from chemomni.tools.generate_tools import _single_molecule, present_candidates
-from chemomni.tools.refs import smiles_for
+from chemomni.tools.refs import WHEN_NUMBERED, smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 MAX_RULES_PER_CALL = 10
@@ -29,7 +29,8 @@ class TargetIn(BaseModel):
         "selected, or the whole molecule when nothing is selected.",
     )
     ref: str | None = Field(
-        None, description="Number of the compound in the editor to work on (see <compounds>), e.g. '3'."
+        None,
+        description="Number of the compound in the editor to work on (see <compounds>), e.g. '3'." + WHEN_NUMBERED,
     )
     smarts: str | None = Field(
         None,

@@ -24,6 +24,8 @@ from chemomni.tools.registry import REGISTRY, ToolContext, specs
 MAX_TOOL_CALLS = 8
 LLM_TIMEOUT_S = 60
 TOOL_TIMEOUT_S = 30
+# How the providers say that the model ran into its output limit: Anthropic, Chat Completions, Responses (incomplete).
+OUTPUT_LIMIT_REASONS = frozenset({"max_tokens", "length", "max_output_tokens"})
 
 Event = tuple[str, dict[str, Any]]
 
@@ -73,6 +75,7 @@ async def run_turn(
     usage_total: dict[str, int] = {}
     tool_calls_used = 0
     stop_reason = "end_turn"
+    finish_reason: str | None = None
 
     async def emit_artifact(call_id: str, kind: str, payload: dict[str, Any]) -> str:
         art = Artifact(message_id=assistant.id, type=kind, payload={**payload, "call_id": call_id})
@@ -94,11 +97,25 @@ async def run_turn(
                     elif isinstance(ev, ToolCall):
                         calls.append(ev)
                     elif isinstance(ev, Done):
+                        finish_reason = ev.finish_reason
                         for k, v in ev.usage.items():
                             if isinstance(v, int):
                                 usage_total[k] = usage_total.get(k, 0) + v
             if text:
                 blocks.append({"type": "text", "text": text})
+            if finish_reason in OUTPUT_LIMIT_REASONS:
+                # A tool call that was cut off in the middle never reaches us (the providers drop half a JSON
+                # object), so without this the turn would end as an empty answer with no error at all.
+                stop_reason = "max_tokens"
+                yield (
+                    "error",
+                    {
+                        "code": "max_tokens",
+                        "message": "The answer was cut off because it reached the model's output limit. "
+                        "Ask for fewer items or a shorter answer, or choose another model.",
+                    },
+                )
+                break
             if budget_left <= 0:
                 stop_reason = "max_tools"
                 break

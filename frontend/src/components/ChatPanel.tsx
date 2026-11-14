@@ -76,6 +76,9 @@ function TurnView({ turn }: { turn: Turn }) {
       {turn.stopReason === 'max_tools' && (
         <div className="text-xs text-muted">Stopped after the tool-call limit for one turn.</div>
       )}
+      {turn.stopReason === 'max_tokens' && !turn.error && (
+        <div className="text-xs text-muted">The answer was cut off at the model's output limit.</div>
+      )}
       {turn.model && !turn.streaming && (
         <div className="text-[11px] text-muted/80" data-testid="answered-by">
           {turn.model}

@@ -115,6 +115,62 @@ async def test_streams_text_and_tool_use() -> None:
     assert events[2].usage["input_tokens"] == 200 and events[2].usage["output_tokens"] == 42
 
 
+CUT_OFF_STREAM = _sse(
+    [
+        {"type": "message_start", "message": MSG},
+        {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {"type": "tool_use", "id": "toolu_1", "name": "propose_structures", "input": {}},
+        },
+        {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "input_json_delta", "partial_json": '{"title": "A'},
+        },
+        # the output limit is reached inside the JSON: there is no content_block_stop
+        {
+            "type": "message_delta",
+            "delta": {"stop_reason": "max_tokens", "stop_sequence": None},
+            "usage": {"output_tokens": 16000},
+        },
+        {"type": "message_stop"},
+    ]
+)
+
+
+async def test_a_tool_call_cut_off_by_the_output_limit_is_reported_not_dropped() -> None:
+    provider = AnthropicProvider(
+        api_key="sk-ant-test",
+        model="claude-haiku-5-5",
+        http_client=httpx2.AsyncClient(
+            transport=httpx2.MockTransport(
+                lambda r: httpx2.Response(200, content=CUT_OFF_STREAM, headers={"content-type": "text/event-stream"})
+            )
+        ),
+    )
+    events = [e async for e in provider.stream([{"role": "user", "content": "x"}], [])]
+    assert not any(isinstance(e, ToolCall) for e in events)  # half a JSON object is no tool call
+    assert isinstance(events[-1], Done) and events[-1].finish_reason == "max_tokens"
+
+
+async def test_the_output_limit_leaves_room_for_a_five_candidate_proposal() -> None:
+    # propose_structures with 5 candidates used 2.3-3.5k output tokens; with 4096, 2 of 6 answers were cut off
+    sent: list[dict] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        sent.append(json.loads(request.content))
+        return httpx2.Response(200, content=STREAM, headers={"content-type": "text/event-stream"})
+
+    provider = AnthropicProvider(
+        api_key="sk-ant-test",
+        model="claude-haiku-5-5",
+        http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler)),
+    )
+    _ = [e async for e in provider.stream([{"role": "user", "content": "x"}], [])]
+    assert sent[0]["max_tokens"] >= 16000
+
+
 async def test_missing_key() -> None:
     with pytest.raises(LLMError, match="ANTHROPIC_API_KEY"):
         _ = [e async for e in AnthropicProvider(api_key=None, model="claude-haiku-5-5").stream([], [])]

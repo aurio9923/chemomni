@@ -15,7 +15,7 @@ from chemomni.chem.names import NameResolver
 from chemomni.chem.props import canonical_smiles, parse_smiles
 from chemomni.chem.scan import Change, scan, target_from_selection, target_from_smarts
 from chemomni.models import TabRead
-from chemomni.tools.refs import smiles_for
+from chemomni.tools.refs import WHEN_NUMBERED, smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
 GRID_CARD = (220, 160)
@@ -36,7 +36,8 @@ class Candidate(BaseModel):
     parent_ref: str | None = Field(
         None,
         description="Number of the compound in the editor this one is derived from (see <compounds>). Give it "
-        "when candidates come from different compounds: each is then laid out on its own parent's drawing.",
+        "when candidates come from different compounds: each is then laid out on its own parent's drawing."
+        + WHEN_NUMBERED,
     )
     parent_smiles: str | None = Field(
         None, description="Same as parent_ref, as SMILES, for a parent that is not numbered."
@@ -50,7 +51,9 @@ class ProposeIn(BaseModel):
         "Omit only for ideas without a starting structure, or when every candidate names its own parent.",
     )
     parent_ref: str | None = Field(
-        None, description="Number of the starting compound in the editor (see <compounds>), instead of SMILES."
+        None,
+        description="Number of the starting compound in the editor (see <compounds>), instead of SMILES."
+        + WHEN_NUMBERED,
     )
     candidates: list[Candidate] = Field(..., min_length=1, max_length=20)
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'Aspirin analogs'.")
@@ -83,7 +86,8 @@ def _compact(item: dict[str, Any], *, with_parent: bool = False) -> dict[str, An
     description=(
         "Present new structures you designed (analogs of the active tab's molecule, or ideas) in one call. "
         "Each candidate is validated with RDKit; invalid ones, duplicates and the parent itself come back "
-        "as rejected (fix and resend those only). Accepted ones open together on a new grid tab, laid out "
+        "as rejected, so never send the parent or a repeat to reach a number (fix and resend the rejected "
+        "ones only). Accepted ones open together on a new grid tab, laid out "
         "like the parent, and the user sees a table with properties and Tanimoto similarity to the parent. "
         'To apply an edit to several compounds and collect the results on ONE tab ("convert the esters of 1, '
         "3 and 5 to acids and put them together\"), send every result in one call and name each one's "
@@ -240,7 +244,9 @@ class ScanIn(BaseModel):
     )
     parent_smiles: str | None = Field(None, description="Only with smarts: the molecule to search.")
     parent_ref: str | None = Field(
-        None, description="Only with smarts: number of the compound in the editor to search (see <compounds>)."
+        None,
+        description="Only with smarts: number of the compound in the editor to search (see <compounds>)."
+        + WHEN_NUMBERED,
     )
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'F + Me scan'.")
 

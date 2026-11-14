@@ -130,6 +130,15 @@ async def test_similarity_and_substructure_artifacts(client: httpx.AsyncClient, 
     assert len(arts[1]["payload"]["items"]) == 1  # only aspirin has a carboxylic acid
 
 
+async def test_an_answer_cut_off_by_the_output_limit_is_shown_as_an_error(client: httpx.AsyncClient, conv: str) -> None:
+    for turn in ([{"finish": "max_tokens"}], [{"text": "Here are five analogs: "}, {"finish": "length"}]):
+        use_script(client, [turn])  # nothing, or a sentence, and then the model ran into its limit
+        events = await chat(client, conv, "analogs")
+        err = next(d for n, d in events if n == "error")
+        assert err["code"] == "max_tokens" and "cut off" in err["message"]
+        assert events[-1][1]["stop_reason"] == "max_tokens"
+
+
 async def test_missing_api_key_reports_error(client: httpx.AsyncClient, conv: str) -> None:
     from chemomni.llm.openai_provider import OpenAIChatProvider
 
