@@ -14,7 +14,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import chemomni.tools.bioisostere_tools
 import chemomni.tools.chem_tools
 import chemomni.tools.edit_tools
-import chemomni.tools.generate_tools  # noqa: F401
+import chemomni.tools.generate_tools
+import chemomni.tools.tautomer_tools  # noqa: F401
 from chemomni.llm.context import Snapshot, build_messages
 from chemomni.llm.provider import Done, LLMError, LLMProvider, TextDelta, ToolCall
 from chemomni.models import Artifact, Conversation, Message, ToolCallRecord, utcnow

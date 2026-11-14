@@ -17,6 +17,7 @@ from rdkit.Chem import rdDepictor, rdFMCS
 from chemomni.chem.props import canonical_smiles, parse_smiles
 
 MCS_TIMEOUT_S = 2
+BOND_CHANGE_MAPPINGS = 48  # equally good atom mappings tried when looking for the tautomer's moved atoms
 RDKIT_BOND_LENGTH = 1.5  # what rdDepictor uses for new atoms; Ketcher draws with ~1.0
 
 
@@ -91,19 +92,55 @@ def _rdkit_depictor() -> Iterator[None]:
         rdDepictor.SetPreferCoordGen(previous)
 
 
+def _moved(a: Chem.Mol, b: Chem.Mol, atom_map: list[tuple[int, int]]) -> set[int]:
+    """Atoms of ``b`` whose hydrogens, charge or bond types differ from their partner in ``a``.
+
+    ``atom_map`` pairs atoms of ``a`` with atoms of ``b``. For two tautomers this is where a proton or a
+    double bond moved; the heavy-atom skeleton is the same, so an element comparison would see nothing.
+    """
+    partner = {n: t for t, n in atom_map}
+    moved: set[int] = set()
+    for t, n in atom_map:
+        atom_a, atom_b = a.GetAtomWithIdx(t), b.GetAtomWithIdx(n)
+        if (
+            atom_a.GetTotalNumHs(includeNeighbors=True) != atom_b.GetTotalNumHs(includeNeighbors=True)
+            or atom_a.GetFormalCharge() != atom_b.GetFormalCharge()
+        ):
+            moved.add(n)
+            continue
+        for bond in atom_b.GetBonds():
+            other = partner.get(bond.GetOtherAtomIdx(n))
+            if other is None:
+                continue
+            twin = a.GetBondBetweenAtoms(t, other)
+            if twin is None or twin.GetBondType() != bond.GetBondType():
+                moved.add(n)
+                break
+    return moved
+
+
 def align(
-    new: Chem.Mol, template: Chem.Mol, mcs_timeout: int = MCS_TIMEOUT_S, *, any_element: bool = False
+    new: Chem.Mol,
+    template: Chem.Mol,
+    mcs_timeout: int = MCS_TIMEOUT_S,
+    *,
+    any_element: bool = False,
+    bond_changes: bool = False,
 ) -> tuple[Chem.Mol, list[int]]:
     """Lay out ``new`` on ``template``'s coordinates through their MCS. Returns (mol, changed atoms).
 
     ``any_element`` matches atoms and bonds by topology only, so a ring in which one atom changed
     (phenyl to pyridine) still keeps the template's ring; the atoms whose element differs count as changed.
+    ``bond_changes`` is for tautomers: it also matches by topology, and the atoms that count as changed are
+    the ones whose hydrogens, charge or bond types differ (of the equally good mappings, the one that
+    changes the fewest atoms, so a symmetric group is not marked for nothing).
 
     The template is first brought to RDKit's bond length so the atoms RDKit adds match the
     constrained ones, and the result is scaled back to the template's (the user's) bond length.
     Without this, drawings from Ketcher (bond length ~1.0) get longer new bonds and bent rings.
     """
     new = Chem.Mol(new)
+    any_element = any_element or bond_changes
     factor = RDKIT_BOND_LENGTH / (_mean_bond_length(template) or RDKIT_BOND_LENGTH)
     reference = _scale(template, factor)
     mcs = rdFMCS.FindMCS(
@@ -121,10 +158,22 @@ def align(
         n_match = new.GetSubstructMatch(query)
         if t_match and n_match:
             atom_map = list(zip(t_match, n_match, strict=True))
+            moved: set[int] = set()
+            if bond_changes:
+                tries = new.GetSubstructMatches(query, uniquify=False, maxMatches=BOND_CHANGE_MAPPINGS)
+                best = min(
+                    (
+                        (pairs, _moved(reference, new, pairs))
+                        for pairs in (list(zip(t_match, m, strict=True)) for m in tries)
+                    ),
+                    key=lambda item: len(item[1]),
+                    default=(atom_map, set()),
+                )
+                atom_map, moved = best
             try:
                 with _rdkit_depictor():
                     rdDepictor.GenerateDepictionMatching2DStructure(new, reference, atomMap=atom_map)
-                matched = {n for t, n in atom_map if _same_element(reference, t, new, n)}
+                matched = {n for t, n in atom_map if _same_element(reference, t, new, n)} - moved
             except ValueError:
                 matched = set()
     if not matched:

@@ -65,6 +65,7 @@ def evaluate(
     molfile: str | None = None,
     *,
     any_element: bool = False,
+    bond_changes: bool = False,
 ) -> Evaluation:
     """Check the candidates and lay them out on the drawing of their parent.
 
@@ -107,7 +108,7 @@ def evaluate(
     if not chosen:
         return Evaluation(ok=False, errors=["no valid new structures"], rejected=rejected)
 
-    placed, changed, parent_placed = _layout(chosen, molfile, any_element)
+    placed, changed, parent_placed = _layout(chosen, molfile, any_element, bond_changes)
     accepted = [
         Accepted(
             index=i + 1,
@@ -152,7 +153,7 @@ def _closest_on_tab(mol: Chem.Mol, tab_structures: list[Chem.Mol]) -> Chem.Mol |
 
 
 def _layout(
-    chosen: list[_Chosen], molfile: str | None, any_element: bool = False
+    chosen: list[_Chosen], molfile: str | None, any_element: bool = False, bond_changes: bool = False
 ) -> tuple[list[Chem.Mol], list[list[int]], Chem.Mol | None]:
     """Coordinates for every candidate, plus the common parent's drawing when there is exactly one.
 
@@ -182,7 +183,9 @@ def _layout(
             continue
         template, centre = template_for(guide)
         # align() returns coordinates at the template's scale (1.0 here)
-        aligned, diff = align(c.mol, template, mcs_timeout=GRID_MCS_TIMEOUT_S, any_element=any_element)
+        aligned, diff = align(
+            c.mol, template, mcs_timeout=GRID_MCS_TIMEOUT_S, any_element=any_element, bond_changes=bond_changes
+        )
         shares_core = len(diff) < c.mol.GetNumAtoms()
         placed.append(centred(aligned, centre) if shares_core else centred(aligned))
         changed.append(diff)
