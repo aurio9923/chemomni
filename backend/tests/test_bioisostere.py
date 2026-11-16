@@ -378,6 +378,52 @@ async def test_many_products_are_capped_and_the_model_is_told_how_to_narrow(
     assert len(next(d for n, d in events if n == "tab.create")["tab"]["smiles_cache"]) == 5
 
 
+async def test_the_number_of_rules_in_one_call_is_not_limited(client: httpx.AsyncClient) -> None:
+    """A cap of 10 rules turned a request for the 11 amide rules into a validation error (gpt-6-luna, 8 of 72 runs)
+    and dropped the last rule without a word. Only the products are limited now (20 on a tab)."""
+    tab = await first_tab(client)
+    ids = [r.id for r in TABLE.active]
+    assert len(ids) > 10
+    provider = FakeProvider(
+        [
+            [{"tool": "apply_bioisosteres", "args": {"rule_ids": ids, "title": "Every rule"}}],
+            [{"text": "ok"}],
+        ]
+    )
+    client._transport.app.state.provider = provider  # type: ignore[attr-defined]
+    await _ask(client, "everything", _drawn_snapshot(tab, ATORVASTATIN))
+    result = _sent_back(provider, 1)
+    assert result["ok"], result
+    assert len(result["rules"]) + len(result["rules_without_a_fit"]) == len(ids)  # every id was taken
+    assert len(result["accepted"]) == bio.MAX_CANDIDATES  # atorvastatin has far more than 20 products
+    assert result["not_shown"] == result["distinct_products"] - bio.MAX_CANDIDATES > 0
+
+
+async def test_rules_that_lose_every_product_to_the_product_limit_are_named(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Products are taken round robin by rule: with a limit of 3 products the first product of each of the first
+    three rules is shown, and the rules after them have nothing on the tab. The result must say which."""
+    monkeypatch.setattr(bio, "MAX_CANDIDATES", 3)
+    tab = await first_tab(client)
+    ids = [r.id for r in TABLE.of_family("phenyl_ring_replacements")][:6]
+    provider = FakeProvider(
+        [
+            [{"tool": "apply_bioisosteres", "args": {"rule_ids": ids, "title": "Rings"}}],
+            [{"text": "ok"}],
+        ]
+    )
+    client._transport.app.state.provider = provider  # type: ignore[attr-defined]
+    events = await _ask(client, "rings", _drawn_snapshot(tab, ATORVASTATIN))
+    result = _sent_back(provider, 1)
+    with_products = [r["id"] for r in result["rules"]]
+    assert len(with_products) > 3
+    art = next(d["artifact"] for n, d in events if n == "artifact")["payload"]
+    shown = [i["rationale"].split(":")[0] for i in art["items"]]
+    assert shown == with_products[:3]
+    assert result["rules_not_shown"] == with_products[3:]
+
+
 async def test_several_molecules_and_no_number_ask_which(client: httpx.AsyncClient) -> None:
     provider = FakeProvider(
         [
@@ -397,4 +443,5 @@ def test_the_tool_schemas_carry_no_smarts_or_smiles_for_the_replacement() -> Non
     for name in ("find_bioisosteres", "apply_bioisosteres"):
         properties = REGISTRY[name].spec()["function"]["parameters"]["properties"]
         assert not {"smiles", "reaction", "product", "products"} & set(properties)
-    assert "rule_ids" in REGISTRY["apply_bioisosteres"].spec()["function"]["parameters"]["properties"]
+    rule_ids = REGISTRY["apply_bioisosteres"].spec()["function"]["parameters"]["properties"]["rule_ids"]
+    assert "maxItems" not in rule_ids  # the number of rules is not limited, only the 20 products on the tab

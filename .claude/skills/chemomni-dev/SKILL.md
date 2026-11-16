@@ -292,7 +292,10 @@ async for chunk in stream:
   database, so the package data folder is re-included with `!backend/chemomni/data/`. `tests/test_rule_table.py` runs
   every rule's own examples (plain RDKit and through the engine); `tests/test_bioisostere.py` holds expectations
   written by hand (never produced by running a rule). The model passes rule ids only; do not add a SMILES field to
-  `apply_bioisosteres`.
+  `apply_bioisosteres`. The number of rules in one call is not limited (PLAN Q66): a `maxItems` on a list the model
+  builds from a list the tool returned becomes a validation error that the model answers by silently dropping the last
+  entries. Limit what the tool outputs (20 products on a tab, with a count and the names of what was left off), not what the
+  model may pass in.
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.

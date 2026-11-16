@@ -17,7 +17,6 @@ from chemomni.tools.generate_tools import _single_molecule, present_candidates
 from chemomni.tools.refs import WHEN_NUMBERED, smiles_for
 from chemomni.tools.registry import ToolContext, ToolResult, tool
 
-MAX_RULES_PER_CALL = 10
 MAX_RISK_NOTES = 2  # per rule, to keep the answer short
 
 
@@ -50,9 +49,10 @@ class ApplyIn(TargetIn):
     rule_ids: list[str] = Field(
         ...,
         min_length=1,
-        max_length=MAX_RULES_PER_CALL,
-        description="Rule ids exactly as find_bioisosteres returned them. Choose the ones that answer the "
-        "question; a few are usually enough.",
+        description="Rule ids exactly as find_bioisosteres returned them. For a general request ('the "
+        "bioisosteres of this amide') use every rule that fits; use fewer only when the user asks for "
+        "particular kinds. The number of rules is not limited: the tab shows at most 20 products, and the "
+        "result says how many were left out and which rules have no product on the tab.",
     )
     title: str = Field(..., max_length=60, description="Short tab name, e.g. 'Acid isosteres of 3'.")
 
@@ -180,7 +180,7 @@ def _summary_apply(r: ToolResult) -> str:
         "The target is the user's selection (only the part the rule replaces must be inside it), a numbered "
         "compound (`ref`), or the whole molecule. Never write the SMILES of a replacement yourself and never "
         "use an id that find_bioisosteres did not return. At most 20 products are shown; the result says how "
-        "many more there were and how to narrow."
+        "many more there were, which rules have no product on the tab, and how to narrow."
     ),
     summary=_summary_apply,
 )
@@ -229,6 +229,11 @@ async def apply_bioisosteres_tool(args: ApplyIn, ctx: ToolContext) -> ToolResult
     if applied.total > shown:
         result["not_shown"] = applied.total - shown
         result["to_see_the_rest"] = "name fewer rules, or select the part to change"
+    # Products are taken round robin by rule, so with more than 20 rules the last ones can lose every product.
+    on_the_grid = {i for c in applied.candidates for i in c.rule_ids}
+    left_off = [o["id"] for o in overview if o["products"] and o["id"] not in on_the_grid]
+    if left_off:
+        result["rules_not_shown"] = left_off
     racemic = [r.rule.id for r in applied.runs if r.rule.creates_stereocenter and r.products]
     if racemic:
         result["new_stereocentre_unspecified"] = racemic
