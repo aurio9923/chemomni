@@ -295,7 +295,10 @@ async for chunk in stream:
   `apply_bioisosteres`. The number of rules in one call is not limited (PLAN Q66): a `maxItems` on a list the model
   builds from a list the tool returned becomes a validation error that the model answers by silently dropping the last
   entries. Limit what the tool outputs (20 products on a tab, with a count and the names of what was left off), not what the
-  model may pass in.
+  model may pass in. The rule groups (`family`) are the author's filing, not a chemist's: the urea and sulfonamide
+  replacements of an amide sit in `linkers`, not in `amide_ester_isosteres`. `find_bioisosteres` therefore always
+  checks every rule and `family` only chooses what is listed in full; the ids that fit in the other groups come back
+  as `fits_in_other_groups` (PLAN Q67). Do not make a filter on the tool's input narrow what the tool looks at.
 - SA score lives in `rdkit.Contrib.SA_Score.sascorer` (add `RDConfig.RDContribDir` to the path
   once at import time).
 - Molfile V3000 out: `Chem.MolToV3KMolBlock(mol)`.

@@ -41,7 +41,9 @@ class TargetIn(BaseModel):
 class FindIn(TargetIn):
     family: str | None = Field(
         None,
-        description="Only rules of one group: " + ", ".join(rules().families) + ". Omit to look at all of them.",
+        description="List only the rules of one group: " + ", ".join(rules().families) + ". Omit to look at all of "
+        "them. Rules of the other groups that fit are still named (`fits_in_other_groups`), so the filter hides "
+        "no fit; for a general request ('the bioisosteres of this amide') leave it out.",
     )
 
 
@@ -119,7 +121,9 @@ def _summary_find(r: ToolResult) -> str:
         "with ids from this list. For each rule that fits you get its id, name, class, how many places it fits, "
         "how many different products that gives, and short qualitative risk notes. The target is the user's "
         "selection, a numbered compound (`ref`), or the whole molecule when nothing is selected. A rule that "
-        "fits is a starting point, not a recommendation: the notes say what to watch."
+        "fits is a starting point, not a recommendation: the notes say what to watch. With `family`, only that "
+        "group is listed in full and the ids that fit in the other groups come as `fits_in_other_groups` (the "
+        "amide has urea and sulfonamide replacements in the group of linkers, not in that of amides)."
     ),
     summary=_summary_find,
 )
@@ -130,9 +134,11 @@ async def find_bioisosteres_tool(args: FindIn, ctx: ToolContext) -> ToolResult:
     target, err = await _target(args, ctx)
     if target is None:
         return {"ok": False, "errors": [err or "could not find the atoms"]}
-    candidates = table.of_family(args.family) if args.family else table.active
-    runs = await run_in_threadpool(bio.find, target, candidates)
-    fits = [r for r in runs if r.matches]
+    # Always look at every rule: the groups are the author's filing, and a chemist's amide replacements are spread
+    # over several (the urea and the sulfonamide sit with the linkers). A group filter only chooses what is listed.
+    runs = await run_in_threadpool(bio.find, target, table.active)
+    in_group = [r for r in runs if not args.family or r.rule.family == args.family]
+    fits = [r for r in in_group if r.matches]
     result: ToolResult = {
         "ok": True,
         "molecule": canonical_smiles(target.mol),
@@ -151,13 +157,21 @@ async def find_bioisosteres_tool(args: FindIn, ctx: ToolContext) -> ToolResult:
             for r in fits
         ],
     }
-    outside = [r.rule.id for r in runs if not r.matches]
+    outside = [r.rule.id for r in in_group if not r.matches]
     if outside and _has_selection(target):
         result["fit_only_outside_the_selection"] = outside
+    elsewhere: dict[str, list[str]] = {}
+    for r in runs:
+        if args.family and r.rule.family != args.family and r.matches:
+            elsewhere.setdefault(r.rule.family, []).append(r.rule.id)
+    if elsewhere:
+        result["fits_in_other_groups"] = elsewhere
     if not fits:
         result["note"] = (
             "no rule fits the selected atoms" if _has_selection(target) else "no rule fits this molecule"
         ) + (f" in the group {args.family}" if args.family else "")
+        if elsewhere:
+            result["note"] += "; rules of other groups do fit (fits_in_other_groups)"
     return result
 
 

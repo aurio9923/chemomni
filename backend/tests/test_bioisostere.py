@@ -424,6 +424,52 @@ async def test_rules_that_lose_every_product_to_the_product_limit_are_named(
     assert result["rules_not_shown"] == with_products[3:]
 
 
+async def _find(
+    client: httpx.AsyncClient, smiles: str, args: dict[str, Any], selected: list[int] | None = None
+) -> dict[str, Any]:
+    tab = await first_tab(client)
+    provider = FakeProvider([[{"tool": "find_bioisosteres", "args": args}], [{"text": "ok"}]])
+    client._transport.app.state.provider = provider  # type: ignore[attr-defined]
+    await _ask(client, "bioisosteres", _drawn_snapshot(tab, smiles, selected))
+    return _sent_back(provider, 1)
+
+
+async def test_a_group_filter_still_names_the_fits_of_the_other_groups(client: httpx.AsyncClient) -> None:
+    """The urea and the sulfonamide replacements of an amide are filed under the linkers, so asking for the group
+    of amides hid them: one of six gpt-6.1-terra runs on imatinib's amide never saw them (article 4)."""
+    anilide = "CC(=O)Nc1ccccc1"
+    in_group = await _find(client, anilide, {"family": "amide_ester_isosteres"})
+    assert {r["family"] for r in in_group["rules"]} == {"amide_ester_isosteres"}
+    assert in_group["fits_in_other_groups"]["linkers"] == ["amide_to_sulfonamide_linker", "amide_to_urea_linker"]
+    everything = await _find(client, anilide, {})
+    assert "fits_in_other_groups" not in everything  # nothing was filtered out
+    listed = {r["id"] for r in everything["rules"]}
+    named = {r["id"] for r in in_group["rules"]} | {i for ids in in_group["fits_in_other_groups"].values() for i in ids}
+    assert named == listed  # the filter changes what is listed in full, not what is found
+
+
+async def test_the_other_groups_respect_the_selection(client: httpx.AsyncClient) -> None:
+    """Atoms 1-3 are the acid and 7-8 the amide of 3-benzamidopropanoic acid. With the acid selected, the amide
+    rules fit only outside the selection and must not be listed as fits of the other groups."""
+    acid_and_amide = "OC(=O)CCNC(=O)c1ccccc1"
+    result = await _find(client, acid_and_amide, {"family": "amide_ester_isosteres"}, [1, 2, 3])
+    assert result["rules"] == []
+    assert set(result["fits_in_other_groups"]) == {"carboxylic_acid_isosteres"}
+    assert "cooh_to_tetrazole" in result["fits_in_other_groups"]["carboxylic_acid_isosteres"]
+    amide_group = {r.id for r in TABLE.of_family("amide_ester_isosteres")}
+    assert "amide_to_thioamide" in result["fit_only_outside_the_selection"]
+    assert set(result["fit_only_outside_the_selection"]) <= amide_group  # only the group that was asked for
+    assert "other groups do fit" in result["note"]
+
+
+async def test_a_group_without_a_fit_points_to_the_groups_that_fit(client: httpx.AsyncClient) -> None:
+    result = await _find(client, "OC(=O)CCC", {"family": "phenyl_ring_replacements"})
+    assert result["ok"] and result["rules"] == []
+    assert "cooh_to_tetrazole" in result["fits_in_other_groups"]["carboxylic_acid_isosteres"]
+    assert "no rule fits this molecule in the group phenyl_ring_replacements" in result["note"]
+    assert "fits_in_other_groups" in result["note"]
+
+
 async def test_several_molecules_and_no_number_ask_which(client: httpx.AsyncClient) -> None:
     provider = FakeProvider(
         [
