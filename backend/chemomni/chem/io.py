@@ -87,10 +87,7 @@ def _read_sdf(text: str) -> tuple[list[Structure], list[str]]:
     for number, record in enumerate(records, start=1):
         name = record.split("\n", 1)[0].strip() or None
         label = f"record {number}" + (f" ({name})" if name else "")
-        try:
-            mol = Chem.MolFromMolBlock(record, sanitize=False, removeHs=False)
-        except Exception:
-            mol = None
+        mol = _read_record(record)
         if mol is None:
             skipped.append(f"{label}: not a readable molfile")
         elif mol.GetNumAtoms() == 0:
@@ -98,6 +95,22 @@ def _read_sdf(text: str) -> tuple[list[Structure], list[str]]:
         else:
             found.append(Structure(mol, name))
     return found, skipped
+
+
+def _read_record(record: str) -> Chem.Mol | None:
+    """One molfile record. RDKit's standard reading first: it takes the stereo from the wedges (also a wedge on a
+    hydrogen) and then drops the explicit hydrogens that can be implicit. PubChem's 2D files carry every hydrogen,
+    which buries the drawing under H labels. A record that does not sanitize (odd valences) is kept as it is."""
+    try:
+        mol = Chem.MolFromMolBlock(record)
+    except Exception:
+        mol = None
+    if mol is not None and mol.GetNumAtoms():
+        return mol
+    try:
+        return Chem.MolFromMolBlock(record, sanitize=False, removeHs=False)
+    except Exception:
+        return None
 
 
 def _read_smiles_lines(text: str) -> tuple[list[Structure], list[str]]:

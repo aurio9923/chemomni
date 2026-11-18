@@ -263,7 +263,8 @@ async for chunk in stream:
   structures do load). Save as offers KET, Molfile V2000/V3000, SDF V2000/V3000, RDF, SMARTS, SMILES, Extended SMILES,
   CML, InChI, InChIKey, SVG, PNG, CDXML, CDX; none of them carries properties or our compound numbers. So the app
   adds: `POST /api/tabs/import` (`{filename, text}` -> new tab; `.sdf/.sd/.mol` records are split on `$$$$` and read
-  unsanitized, `.smi/.txt` lines are `SMILES [name]` with an optional header and `#` comments, `.csv/.tsv` need a
+  with RDKit's standard reader first (stereo from the wedges, also one on an H; then the H that can be implicit are
+  dropped: PubChem's 2D SDF carries every H, PLAN Q68), unsanitized only when that fails, `.smi/.txt` lines are `SMILES [name]` with an optional header and `#` comments, `.csv/.tsv` need a
   `smiles`-like header column; one structure keeps its drawing, several go on a `layout.grid` with every structure
   centred at Ketcher's bond length; 3D records are depicted flat without hydrogens; at most 200 structures, the rest
   is reported) and `POST /api/chem/export` (`{format: sdf|csv|smi, molfile, ket, name}`; the client sends the

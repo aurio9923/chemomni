@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import httpx
 import pytest
@@ -90,6 +91,53 @@ def test_a_3d_record_is_drawn_flat_without_its_hydrogens() -> None:
     assert placed.GetNumAtoms() == 3
     assert all(abs(placed.GetConformer().GetAtomPosition(i).z) < 1e-6 for i in range(3))
     assert content.smiles == ["CCO"]
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _heavy_atoms_kept_in_place(record: str, molfile: str) -> None:
+    """The heavy atoms are drawn where the file put them (the distances between them keep one proportion)."""
+    original = Chem.MolFromMolBlock(record, sanitize=False, removeHs=False)
+    heavy = [a.GetIdx() for a in original.GetAtoms() if a.GetAtomicNum() != 1]
+    before = [original.GetConformer().GetAtomPosition(i) for i in heavy]
+    placed = Chem.MolFromMolBlock(molfile, sanitize=False, removeHs=False)
+    after = [placed.GetConformer().GetAtomPosition(i) for i in range(placed.GetNumAtoms())]
+    assert len(after) == len(before)
+    ratio = (after[0] - after[1]).Length() / (before[0] - before[1]).Length()
+    for i in range(len(before)):
+        for j in range(i):
+            assert (after[i] - after[j]).Length() == pytest.approx(ratio * (before[i] - before[j]).Length(), abs=2e-3)
+
+
+def test_a_pubchem_2d_record_is_drawn_without_its_hydrogens() -> None:
+    """PubChem's 2D SDF writes every hydrogen as an atom; drawn as they are, H labels bury the structure."""
+    record = (FIXTURES / "pubchem_5950_l_alanine_2d.sdf").read_text()  # PubChem CID 5950, L-alanine
+    content = tab_content(parse_import("5950.sdf", record))
+    placed = Chem.MolFromMolBlock(content.molfile, sanitize=False, removeHs=False)
+    assert sorted(a.GetSymbol() for a in placed.GetAtoms()) == ["C", "C", "C", "N", "O", "O"]
+    assert content.smiles == ["C[C@H](N)C(=O)O"]  # L-alanine, (S)
+    _heavy_atoms_kept_in_place(record, content.molfile)
+
+
+def test_a_wedge_on_a_hydrogen_keeps_its_stereocentre() -> None:
+    """The same record with the wedge moved from C-N to C-H (pointing the way that still gives L-alanine): the
+    stereocentre is read from the hydrogen before the hydrogen is dropped."""
+    record = (FIXTURES / "l_alanine_wedge_on_h.sdf").read_text()
+    content = tab_content(parse_import("ala.sdf", record))
+    placed = Chem.MolFromMolBlock(content.molfile, sanitize=False, removeHs=False)
+    assert all(a.GetAtomicNum() != 1 for a in placed.GetAtoms())
+    assert content.smiles == ["C[C@H](N)C(=O)O"]
+
+
+def test_a_record_that_does_not_sanitize_is_imported_as_it_is() -> None:
+    """A pentavalent carbon with an explicit hydrogen: RDKit's standard reading refuses it, so nothing is changed."""
+    mol = Chem.MolFromSmiles("[H]C(C)(C)(C)(C)C", sanitize=False)
+    mol.UpdatePropertyCache(strict=False)
+    rdDepictor.Compute2DCoords(mol)
+    imported = parse_import("odd.sdf", Chem.MolToMolBlock(mol, kekulize=False) + "$$$$\n")
+    assert len(imported.structures) == 1 and imported.skipped == []
+    assert imported.structures[0].mol.GetNumAtoms() == 7  # the hydrogen is still there
 
 
 def test_a_smiles_list_skips_the_header_comments_and_bad_lines() -> None:
