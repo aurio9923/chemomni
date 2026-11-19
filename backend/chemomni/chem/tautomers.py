@@ -56,12 +56,17 @@ UNFAVOURED_GROUPS: dict[str, str] = {
     "acid_enol": "[CX3;!a]([OX2H1,SX2H1])([#7,#8,#16])=[CX3;!$([#6]-[#6]=[O,S])]",
     # hydroxamic acid as C(OH)-N=O: with the imidic form hidden it would be the only form left of one
     "nitroso_carbinol": "[CX4]([OX2H1])[NX2]=[OX1]",
+    # an amino group on an aromatic ring (aminopyridine, aminopyrimidine, adenine, 2-aminothiazole, and the same
+    # with an aryl, acyl or sulfonyl on the nitrogen) as the exocyclic imine: RDKit still calls the ring aromatic,
+    # so the ring rule does not see it (PLAN Q69)
+    "exocyclic_imine": "[c]=[NX2;!R]",
 }
 UNFAVOURED_WHY: dict[str, str] = {
     LOST_AROMATIC_RING: "a ring that is aromatic in the drawn form is not aromatic",
     "imidic_acid": "an amide, lactam, urea or imide written as C(OH)=N (imidic acid, lactim)",
     "acid_enol": "an amide, acid or ester written as its enol C=C(OH)-N/O",
     "nitroso_carbinol": "a hydroxamic acid written as C(OH)-N=O",
+    "exocyclic_imine": "an amino group on an aromatic ring written as an exocyclic C=N (imine)",
 }
 _GROUP_QUERIES = {name: Chem.MolFromSmarts(smarts) for name, smarts in UNFAVOURED_GROUPS.items()}
 

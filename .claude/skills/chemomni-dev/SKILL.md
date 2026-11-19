@@ -231,7 +231,7 @@ async for chunk in stream:
   chemist draws. `unfavoured_reasons(drawn, tautomer)` marks them: a ring aromatic in the drawing that is not aromatic
   in the tautomer (checked ring by ring on the ring's bonds; the enumerator keeps the atom order, so indices can be
   compared), and groups in `UNFAVOURED_GROUPS` that the tautomer has more of than the drawing (imidic acid C(OH)=N,
-  enol of an acid derivative, C(OH)-N=O of a hydroxamic acid; the carbon is `!a`, so 2-hydroxypyridine stays). Do not
+  enol of an acid derivative, C(OH)-N=O of a hydroxamic acid; the carbon is `!a`, so 2-hydroxypyridine stays), and (Q69) `exocyclic_imine` `[c]=[NX2;!R]`: an amino group on an aromatic ring as its imine. RDKit keeps such a ring aromatic (the exocyclic C=N counts like the C=O of 2-pyridone), so the ring rule cannot see it; acyl and sulfonyl amides on the ring are included by the user's choice. Do not
   compare the number of aromatic rings with the canonical form: that hides the enols of cyclic 1,3-diketones and
   tetramic acids. The canonical tautomer can itself be unfavoured (hydroxamic acids: RDKit scores C(OH)=N-OH highest).
   To add a class, add one SMARTS and one sentence, plus a hand-written case and a neighbour that must stay in

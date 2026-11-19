@@ -43,7 +43,8 @@ class TautomersIn(BaseModel):
     all_forms: bool = Field(
         False,
         description="Leave it false. True also lists the unfavoured forms that are hidden by default (a ring "
-        "that loses its aromaticity, an amide written as C(OH)=N or as an enol): only when the user asks for "
+        "that loses its aromaticity, an amide written as C(OH)=N or as an enol, an amino group on an aromatic "
+        "ring written as an exocyclic imine): only when the user asks for "
         "every form or for the hidden ones.",
     )
     title: str = Field("Tautomers", max_length=60, description="Short tab name, e.g. 'Tautomers of 3'.")
@@ -109,7 +110,8 @@ def _why(reasons: tuple[str, ...]) -> str:
         "the canonical SMILES. The result gives the canonical SMILES, how many tautomers there are and whether "
         "the search was complete. RDKit also generates forms no chemist would draw: a ring that loses its "
         "aromaticity (phenol as a cyclohexadienone), an amide, lactam or urea written as C(OH)=N, an amide, "
-        "acid or ester written as its enol. They are left off the list and counted in `hidden`; "
+        "acid or ester written as its enol, an amino group on an aromatic ring (aminopyridine, aminopyrimidine, "
+        "adenine) written as an exocyclic C=N imine. They are left off the list and counted in `hidden`; "
         "all_forms=true lists them too. Stereochemistry "
         "is kept and the charge state is not changed. The canonical tautomer is RDKit's consistent choice, "
         "useful for comparing and merging structures; it is not a prediction of which tautomer predominates "

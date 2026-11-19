@@ -202,7 +202,9 @@ def test_the_enol_of_an_amide_acid_or_ester_is_unfavoured(drawn: str, enol: str)
         ("CC(=O)CC(C)=O", "CC(=O)C=C(C)O"),  # the enol of a beta-diketone
         ("CCOC(=O)CC(C)=O", "CCOC(O)=CC(C)=O"),  # a beta-keto ester enolised towards the ester: conjugated, kept
         ("CC(=O)CC(N)=O", "CC(=O)C=C(N)O"),  # the same for a beta-keto amide
-        ("Nc1ccccn1", "N=c1cccc[nH]1"),  # amino / imino
+        ("N=c1cccc[nH]1", "Nc1ccccn1"),  # a drawn imine keeps its amino form (the reverse is hidden, Q69)
+        ("Nc1ncnc2[nH]cnc12", "Nc1ncnc2nc[nH]c12"),  # adenine: the 7H / 9H forms stay
+        ("CC(=N)NC", "CN=C(C)N"),  # an open-chain amidine: no aromatic ring, not the imine rule
         (PYRAZOLE_A, PYRAZOLE_B),  # the N-H forms of an azole
         ("O=C1CC(=O)CN1", "O=C1C=C(O)CN1"),  # tetramic acid: the enol it exists as
     ],
@@ -210,6 +212,45 @@ def test_the_enol_of_an_amide_acid_or_ester_is_unfavoured(drawn: str, enol: str)
 def test_forms_a_chemist_draws_are_not_unfavoured(drawn: str, kept: str) -> None:
     found = run(drawn)
     assert cs(kept) in found.favoured
+
+
+@pytest.mark.parametrize(
+    ("drawn", "imine"),
+    [
+        ("Nc1ccccn1", "N=c1cccc[nH]1"),  # 2-aminopyridine as pyridin-2(1H)-imine
+        ("Nc1ccncc1", "N=c1cc[nH]cc1"),  # 4-aminopyridine
+        ("Nc1ncccn1", "N=c1[nH]cccn1"),  # 2-aminopyrimidine
+        ("Cc1ccccc1Nc1nccc(-c2cccnc2)n1", "Cc1ccccc1N=c1nccc(-c2cccnc2)[nH]1"),  # the anilinopyrimidine of imatinib
+        ("Nc1ncnc2[nH]cnc12", "N=c1nc[nH]c2[nH]cnc12"),  # adenine
+        ("Nc1cc[nH]c(=O)n1", "N=c1cc[nH]c(=O)[nH]1"),  # cytosine
+        ("Nc1nccs1", "N=c1[nH]ccs1"),  # 2-aminothiazole
+        ("Nc1nc2ccccc2[nH]1", "N=c1[nH]c2ccccc2[nH]1"),  # 2-aminobenzimidazole
+        ("CC(=O)Nc1ccccn1", "CC(=O)N=c1cccc[nH]1"),  # an acyl on the nitrogen
+        ("Nc1ccc(S(=O)(=O)Nc2ccccn2)cc1", "Nc1ccc(S(=O)(=O)N=c2cccc[nH]2)cc1"),  # a sulfonyl (sulfapyridine)
+    ],
+)
+def test_an_amino_group_on_an_aromatic_ring_written_as_an_imine_is_unfavoured(drawn: str, imine: str) -> None:
+    """RDKit keeps these rings aromatic (an exocyclic C=N, like the C=O of 2-pyridone), so the ring rule misses
+    them; chemists reject them all the same (user decision, PLAN Q69). Acyl and sulfonyl amides are included."""
+    found = run(drawn)
+    assert "exocyclic_imine" in found.unfavoured[cs(imine)]
+    assert cs(imine) not in found.favoured
+
+
+def test_the_amino_heteroarenes_of_imatinib_leave_only_the_drawn_form() -> None:
+    """Imatinib: the two imines of the anilinopyrimidine, the imidic acid of the amide, and that imidic acid with
+    either imine. Five forms, all hidden, nothing to show."""
+    found = run("Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1")
+    assert found.total == 6 and found.is_canonical
+    assert found.favoured == [] and len(found.unfavoured) == 5
+    assert sorted(found.unfavoured.values()) == sorted(
+        [("exocyclic_imine",)] * 2 + [("imidic_acid",)] + [("imidic_acid", "exocyclic_imine")] * 2
+    )
+
+
+def test_2_pyridone_is_not_an_imine_and_stays() -> None:
+    found = run("Oc1ccccn1")
+    assert cs("O=c1cccc[nH]1") in found.favoured and not any("exocyclic_imine" in r for r in found.unfavoured.values())
 
 
 def test_a_beta_keto_ester_keeps_its_conjugated_enols_and_loses_the_bis_enol() -> None:
